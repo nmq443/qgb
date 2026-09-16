@@ -10,3 +10,15 @@ TEST(UtilsTest, MakeWord)
     uint16_t word = makeWord(low, high);
     EXPECT_EQ(0x2c4a, word); // 0010'1100'0100'1010
 }
+
+TEST(UtilsTest, ReadGbRomSuccessfully)
+{
+    std::vector<uint8_t> rom;
+    EXPECT_NO_THROW(rom = readGbRom("../roms/cpu_instrs/cpu_instrs.gb"));
+}
+
+TEST(UtilsTest, ReadGbRomFailed)
+{
+    std::vector<uint8_t> rom;
+    EXPECT_ANY_THROW(rom = readGbRom(""));
+}
