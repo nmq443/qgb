@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CPU.h"
+#include "Bus.h"
 
 namespace qgb
 {
@@ -11,6 +12,7 @@ namespace qgb
         void run();
     private:
         CPU mCPU;
+        Bus mBus;
         bool mRunning = true;
     };
 }

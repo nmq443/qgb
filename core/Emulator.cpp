@@ -7,7 +7,7 @@ namespace qgb
     {
         while (mRunning)
         {
-            mCPU.step();
+            mCPU.step(mBus);
         }
     }
 }

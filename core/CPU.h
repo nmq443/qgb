@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include "Registers.h"
+#include "Bus.h"
 
 namespace qgb
 {
@@ -9,7 +10,9 @@ namespace qgb
     {
     public:
         CPU() = default;
-        void step();
+        void step(Bus& bus);
+        uint8_t fetchByte(Bus& bus);
+        uint16_t fetchWord(Bus& bus);
 
     private:
         Registers mRegisters;

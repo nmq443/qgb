@@ -10,7 +10,8 @@ protected:
 };
 
 // Test initial reset state
-TEST_F(RegistersTest, InitialStateIsZero) {
+TEST_F(RegistersTest, InitialStateIsZero) 
+{
     EXPECT_EQ(regs.getA(), 0);
     EXPECT_EQ(regs.getB(), 0);
     EXPECT_EQ(regs.getC(), 0);
@@ -57,4 +58,28 @@ TEST_F(RegistersTest, FlagManipulation)
     regs.setFlag(Flag::Subtraction, false);
     EXPECT_FALSE(regs.getFlag(Flag::Subtraction));
     EXPECT_TRUE(regs.getFlag(Flag::HalfCarry));
+}
+
+TEST_F(RegistersTest, SetRegisterPair) 
+{
+    // for AF register pair, when setting we set lower 4 bits of f register to 0
+    regs.setAF(0x1234);
+    EXPECT_EQ(regs.getA(), 0x12);
+    EXPECT_EQ(regs.getF(), 0x30);
+    EXPECT_EQ(regs.getAF(), 0x1230);
+
+    regs.setBC(0x1234);
+    EXPECT_EQ(regs.getB(), 0x12);
+    EXPECT_EQ(regs.getC(), 0x34);
+    EXPECT_EQ(regs.getBC(), 0x1234);
+
+    regs.setDE(0x1234);
+    EXPECT_EQ(regs.getD(), 0x12);
+    EXPECT_EQ(regs.getE(), 0x34);
+    EXPECT_EQ(regs.getDE(), 0x1234);
+
+    regs.setHL(0x1234);
+    EXPECT_EQ(regs.getH(), 0x12);
+    EXPECT_EQ(regs.getL(), 0x34);
+    EXPECT_EQ(regs.getHL(), 0x1234);
 }
