@@ -8,6 +8,10 @@ namespace qgb
         uint8_t opcode = fetchByte(bus);
         switch (opcode)
         {
+        case 0x00: // NOP
+        {
+            break;
+        }
         case 0x02: // LD [BC], A
         {
             bus.write(mRegisters.getBC(), mRegisters.getA());
