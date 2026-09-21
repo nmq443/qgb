@@ -547,7 +547,68 @@ namespace qgb
         {
             mRegisters.setA(increment(mRegisters.getA()));
             break;
-        }   
+        }
+        case 0x05: // DEC B
+        {
+            mRegisters.setB(decrement(mRegisters.getB()));
+            break;
+        }
+        case 0x15: // DEC D
+        {
+            mRegisters.setD(decrement(mRegisters.getD()));
+            break;
+        }
+        case 0x25: // DEC H
+        {
+            mRegisters.setH(decrement(mRegisters.getH()));
+            break;
+        }
+        case 0x0d: // DEC C
+        {
+            mRegisters.setC(decrement(mRegisters.getC()));
+            break;
+        }
+        case 0x1d: // DEC E
+        {
+            mRegisters.setE(decrement(mRegisters.getE()));
+            break;
+        }
+        case 0x2d: // DEC L
+        {
+            mRegisters.setL(decrement(mRegisters.getL()));
+            break;
+        }
+        case 0x3d: // DEC A
+        {
+            mRegisters.setA(decrement(mRegisters.getA()));
+            break;
+        }
+        case 0x35: // DEC (HL)
+        {
+            uint8_t val = bus.read(mRegisters.getHL());
+            bus.write(mRegisters.getHL(), decrement(val));
+            break;
+        }
+        case 0x0b: // DEC BC
+        {
+            mRegisters.setBC(static_cast<uint16_t>(mRegisters.getBC() - 1));
+            break;
+        }
+        case 0x1b: // DEC DE
+        {
+            mRegisters.setDE(static_cast<uint16_t>(mRegisters.getDE() - 1));
+            break;
+        }
+        case 0x2b: // DEC HL
+        {
+            mRegisters.setHL(static_cast<uint16_t>(mRegisters.getHL() - 1));
+            break;
+        }
+        case 0x3b: // DEC SP
+        {
+            mRegisters.setSP(static_cast<uint16_t>(mRegisters.getSP() - 1));
+            break;
+        }
         }
     }
 
@@ -572,6 +633,18 @@ namespace qgb
 
         mRegisters.setFlag(Flag::Zero, res == 0);
         mRegisters.setFlag(Flag::Subtraction, false);
+        mRegisters.setFlag(Flag::HalfCarry, halfCarryFlag);
+
+        return res;
+    }
+
+    uint8_t CPU::decrement(uint8_t r8)
+    {
+        uint8_t res = r8 - 1;
+        bool halfCarryFlag = (r8 & 0x0f) == 0;
+
+        mRegisters.setFlag(Flag::Zero, res == 0);
+        mRegisters.setFlag(Flag::Subtraction, true);
         mRegisters.setFlag(Flag::HalfCarry, halfCarryFlag);
 
         return res;
