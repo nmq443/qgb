@@ -13,7 +13,8 @@ namespace qgb
         void step(Bus& bus);
         uint8_t fetchByte(Bus& bus);
         uint16_t fetchWord(Bus& bus);
-
+    private:
+        uint8_t increment(uint8_t r8);
     private:
         Registers mRegisters;
     };

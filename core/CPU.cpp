@@ -487,6 +487,67 @@ namespace qgb
             mRegisters.setSP(mRegisters.getHL());
             break;
         }
+        case 0x03: // INC BC
+        {
+            mRegisters.setBC(static_cast<uint16_t>(mRegisters.getBC() + 1));
+            break;
+        }
+        case 0x13: // INC DE
+        {
+            mRegisters.setDE(static_cast<uint16_t>(mRegisters.getDE() + 1));
+            break;
+        }
+        case 0x23: // INC HL
+        {
+            mRegisters.setHL(static_cast<uint16_t>(mRegisters.getHL() + 1));
+            break;
+        }
+        case 0x33: // INC SP
+        {
+            mRegisters.setSP(static_cast<uint16_t>(mRegisters.getSP() + 1));
+            break;
+        }
+        case 0x04: // INC B
+        {
+            mRegisters.setB(increment(mRegisters.getB()));
+            break;
+        }
+        case 0x14: // INC D
+        {
+            mRegisters.setD(increment(mRegisters.getD()));
+            break;
+        }
+        case 0x24: // INC H
+        {
+            mRegisters.setH(increment(mRegisters.getH()));
+            break;
+        }
+        case 0x34: // INC (HL)
+        {
+            uint8_t val = bus.read(mRegisters.getHL());
+            bus.write(mRegisters.getHL(), increment(val));
+            break;
+        }
+        case 0x0c: // INC C
+        {
+            mRegisters.setC(increment(mRegisters.getC()));
+            break;
+        }
+        case 0x1c: // INC E
+        {
+            mRegisters.setE(increment(mRegisters.getE()));
+            break;
+        }
+        case 0x2c: // INC L
+        {
+            mRegisters.setL(increment(mRegisters.getL()));
+            break;
+        }
+        case 0x3c: // INC A
+        {
+            mRegisters.setA(increment(mRegisters.getA()));
+            break;
+        }   
         }
     }
 
@@ -502,5 +563,17 @@ namespace qgb
         uint8_t low = fetchByte(bus);
         uint8_t high = fetchByte(bus);
         return makeWord(low, high);
+    }
+
+    uint8_t CPU::increment(uint8_t r8)
+    {
+        uint8_t res = r8 + 1;
+        bool halfCarryFlag = (r8 & 0x0f) + 0x01 > 0x0f;
+
+        mRegisters.setFlag(Flag::Zero, res == 0);
+        mRegisters.setFlag(Flag::Subtraction, false);
+        mRegisters.setFlag(Flag::HalfCarry, halfCarryFlag);
+
+        return res;
     }
 }
