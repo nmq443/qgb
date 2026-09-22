@@ -1,6 +1,7 @@
 #include "CPU.h"
 #include "Utils.h"
 #include <cstdint>
+#include <regex>
 
 namespace qgb
 {
@@ -791,6 +792,45 @@ void CPU::step(Bus &bus)
         mRegisters.setFlag(Flag::Subtraction, false);
         mRegisters.setFlag(Flag::HalfCarry, setHalfCarry);
         mRegisters.setFlag(Flag::Carry, setCarry);
+        break;
+    }
+    case 0x27: // DAA
+    {
+        uint8_t adjustment = 0;
+        uint8_t a = mRegisters.getA();
+        bool setCarry = false;
+
+        if (mRegisters.getFlag(Flag::Subtraction))
+        {
+            if (mRegisters.getFlag(Flag::HalfCarry))
+            {
+                adjustment += 0x06;
+            }
+            if (mRegisters.getFlag(Flag::Carry))
+            {
+                adjustment += 0x60;
+                setCarry = true;
+            }
+            a -= adjustment;
+        }
+        else
+        {
+            if (mRegisters.getFlag(Flag::HalfCarry) or ((a & 0x0f) > 0x09))
+            {
+                adjustment += 0x06;
+            }
+            if (mRegisters.getFlag(Flag::Carry) or (a > 0x99))
+            {
+                adjustment += 0x60;
+                setCarry = true;
+            }
+            a += adjustment;
+        }
+
+        mRegisters.setFlag(Flag::Zero, a == 0);
+        mRegisters.setFlag(Flag::HalfCarry, false);
+        mRegisters.setFlag(Flag::Carry, setCarry);
+        mRegisters.setA(a);
         break;
     }
     }
