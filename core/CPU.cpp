@@ -847,6 +847,13 @@ void CPU::step(Bus &bus)
         mRegisters.setFlag(Flag::HalfCarry, true);
         break;
     }
+    case 0x3f: // CCF
+    {
+        mRegisters.setFlag(Flag::Subtraction, false);
+        mRegisters.setFlag(Flag::HalfCarry, false);
+        mRegisters.setFlag(Flag::Carry, !mRegisters.getFlag(Flag::Carry));
+        break;
+    }
     }
 }
 
