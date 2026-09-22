@@ -1,5 +1,6 @@
 #include "CPU.h"
 #include "Utils.h"
+#include <cstdint>
 
 namespace qgb
 {
@@ -612,6 +613,43 @@ namespace qgb
         {
             mRegisters.setSP(static_cast<uint16_t>(mRegisters.getSP() - 1));
             break;
+        }
+        case 0x20: // JR NZ, s8
+        {
+            int8_t s8 = fetchByte(bus);
+            if (!mRegisters.getFlag(Flag::Zero))
+            {
+                mRegisters.setPC(mRegisters.getPC() + s8);
+            }
+        }
+        case 0x30: // JR NC, s8
+        {
+            int8_t s8 = fetchByte(bus);
+            if (!mRegisters.getFlag(Flag::Carry))
+            {
+                mRegisters.setPC(mRegisters.getPC() + s8);
+            }
+        }
+        case 0x18: // JR s8
+        {
+            int8_t s8 = fetchByte(bus);
+            mRegisters.setPC(mRegisters.getPC() + s8);
+        }
+        case 0x28: // JR Z, s8
+        {
+            int8_t s8 = fetchByte(bus);
+            if (mRegisters.getFlag(Flag::Zero))
+            {
+                mRegisters.setPC(mRegisters.getPC() + s8);
+            }
+        }
+        case 0x38: // JR C, s8
+        {
+            int8_t s8 = fetchByte(bus);
+            if (mRegisters.getFlag(Flag::Carry))
+            {
+                mRegisters.setPC(mRegisters.getPC() + s8);
+            }
         }
         }
     }
