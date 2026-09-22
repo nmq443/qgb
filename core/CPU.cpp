@@ -833,6 +833,13 @@ void CPU::step(Bus &bus)
         mRegisters.setA(a);
         break;
     }
+    case 0x37: // SCF
+    {
+        mRegisters.setFlag(Flag::Subtraction, false);
+        mRegisters.setFlag(Flag::HalfCarry, false);
+        mRegisters.setFlag(Flag::Carry, true);
+        break;
+    }
     }
 }
 
