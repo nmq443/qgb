@@ -1,5 +1,5 @@
-#include <gtest/gtest.h>
 #include <core/Registers.h>
+#include <gtest/gtest.h>
 
 using namespace qgb;
 
@@ -10,7 +10,7 @@ protected:
 };
 
 // Test initial reset state
-TEST_F(RegistersTest, InitialStateIsZero) 
+TEST_F(RegistersTest, InitialStateIsZero)
 {
     EXPECT_EQ(regs.getA(), 0);
     EXPECT_EQ(regs.getB(), 0);
@@ -31,7 +31,7 @@ TEST_F(RegistersTest, InitialStateIsZero)
 }
 
 // Test individual flag setting and getting
-TEST_F(RegistersTest, FlagManipulation) 
+TEST_F(RegistersTest, FlagManipulation)
 {
     // Test Zero Flag
     regs.setFlag(Flag::Zero, true);
@@ -60,7 +60,7 @@ TEST_F(RegistersTest, FlagManipulation)
     EXPECT_TRUE(regs.getFlag(Flag::HalfCarry));
 }
 
-TEST_F(RegistersTest, SetRegisterPair) 
+TEST_F(RegistersTest, SetRegisterPair)
 {
     // for AF register pair, when setting we set lower 4 bits of f register to 0
     regs.setAF(0x1234);

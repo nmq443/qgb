@@ -3,11 +3,11 @@
 
 namespace qgb
 {
-    void Emulator::run()
+void Emulator::run()
+{
+    while (mRunning)
     {
-        while (mRunning)
-        {
-            mCPU.step(mBus);
-        }
+        mCPU.step(mBus);
     }
 }
+} // namespace qgb
