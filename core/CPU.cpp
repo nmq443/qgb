@@ -677,6 +677,32 @@ void CPU::step(Bus &bus)
         mRegisters.setFlag(Flag::HalfCarry, false);
         mRegisters.setFlag(Flag::Carry, bit7 == 1);
     }
+    case 0x0f: // RRCA
+    {
+        uint8_t a = mRegisters.getA();
+        uint8_t bit0 = a & 0x01;
+        a = (a >> 1) | (bit0 << 7);
+        mRegisters.setA(a);
+
+        mRegisters.setFlag(Flag::Zero, false);
+        mRegisters.setFlag(Flag::Subtraction, false);
+        mRegisters.setFlag(Flag::HalfCarry, false);
+        mRegisters.setFlag(Flag::Carry, bit0 == 0x01);
+    }
+    case 0x1f: // RRA
+    {
+        uint8_t a = mRegisters.getA();
+        uint8_t bit0 = a & 0x01;
+        uint8_t oldCarry = mRegisters.getFlag(Flag::Carry) ? 1 : 0;
+
+        a = (a >> 1) | (oldCarry << 7);
+        mRegisters.setA(a);
+
+        mRegisters.setFlag(Flag::Zero, false);
+        mRegisters.setFlag(Flag::Subtraction, false);
+        mRegisters.setFlag(Flag::HalfCarry, false);
+        mRegisters.setFlag(Flag::Carry, bit0 == 1);
+    }
     }
 }
 
