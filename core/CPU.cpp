@@ -840,6 +840,13 @@ void CPU::step(Bus &bus)
         mRegisters.setFlag(Flag::Carry, true);
         break;
     }
+    case 0x2f: // CPL
+    {
+        mRegisters.setA(~mRegisters.getA());
+        mRegisters.setFlag(Flag::Subtraction, true);
+        mRegisters.setFlag(Flag::HalfCarry, true);
+        break;
+    }
     }
 }
 
