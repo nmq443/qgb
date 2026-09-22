@@ -621,6 +621,7 @@ void CPU::step(Bus &bus)
         {
             mRegisters.setPC(mRegisters.getPC() + s8);
         }
+        break;
     }
     case 0x30: // JR NC, s8
     {
@@ -629,11 +630,13 @@ void CPU::step(Bus &bus)
         {
             mRegisters.setPC(mRegisters.getPC() + s8);
         }
+        break;
     }
     case 0x18: // JR s8
     {
         int8_t s8 = fetchByte(bus);
         mRegisters.setPC(mRegisters.getPC() + s8);
+        break;
     }
     case 0x28: // JR Z, s8
     {
@@ -642,6 +645,7 @@ void CPU::step(Bus &bus)
         {
             mRegisters.setPC(mRegisters.getPC() + s8);
         }
+        break;
     }
     case 0x38: // JR C, s8
     {
@@ -650,6 +654,7 @@ void CPU::step(Bus &bus)
         {
             mRegisters.setPC(mRegisters.getPC() + s8);
         }
+        break;
     }
     case 0x07: // RLCA
     {
@@ -662,6 +667,7 @@ void CPU::step(Bus &bus)
         mRegisters.setFlag(Flag::Subtraction, false);
         mRegisters.setFlag(Flag::HalfCarry, false);
         mRegisters.setFlag(Flag::Carry, bit7 == 0x01);
+        break;
     }
     case 0x17: // RLA
     {
@@ -676,6 +682,7 @@ void CPU::step(Bus &bus)
         mRegisters.setFlag(Flag::Subtraction, false);
         mRegisters.setFlag(Flag::HalfCarry, false);
         mRegisters.setFlag(Flag::Carry, bit7 == 1);
+        break;
     }
     case 0x0f: // RRCA
     {
@@ -688,6 +695,7 @@ void CPU::step(Bus &bus)
         mRegisters.setFlag(Flag::Subtraction, false);
         mRegisters.setFlag(Flag::HalfCarry, false);
         mRegisters.setFlag(Flag::Carry, bit0 == 0x01);
+        break;
     }
     case 0x1f: // RRA
     {
@@ -702,6 +710,88 @@ void CPU::step(Bus &bus)
         mRegisters.setFlag(Flag::Subtraction, false);
         mRegisters.setFlag(Flag::HalfCarry, false);
         mRegisters.setFlag(Flag::Carry, bit0 == 1);
+        break;
+    }
+    case 0x09: // ADD HL, BC
+    {
+        mRegisters.setHL(add(mRegisters.getHL(), mRegisters.getBC()));
+        break;
+    }
+    case 0x19: // ADD HL, DE
+    {
+        mRegisters.setHL(add(mRegisters.getHL(), mRegisters.getDE()));
+        break;
+    }
+    case 0x29: // ADD HL, HL
+    {
+        mRegisters.setHL(add(mRegisters.getHL(), mRegisters.getHL()));
+        break;
+    }
+    case 0x39: // ADD HL, SP
+    {
+        mRegisters.setHL(add(mRegisters.getHL(), mRegisters.getSP()));
+        break;
+    }
+    case 0x80: // ADD A, B
+    {
+        mRegisters.setA(add(mRegisters.getA(), mRegisters.getB()));
+        break;
+    }
+    case 0x81: // ADD A, C
+    {
+        mRegisters.setA(add(mRegisters.getA(), mRegisters.getC()));
+        break;
+    }
+    case 0x82: // ADD A, D
+    {
+        mRegisters.setA(add(mRegisters.getA(), mRegisters.getD()));
+        break;
+    }
+    case 0x83: // ADD A, E
+    {
+        mRegisters.setA(add(mRegisters.getA(), mRegisters.getE()));
+        break;
+    }
+    case 0x84: // ADD A, H
+    {
+        mRegisters.setA(add(mRegisters.getA(), mRegisters.getH()));
+        break;
+    }
+    case 0x85: // ADD A, L
+    {
+        mRegisters.setA(add(mRegisters.getA(), mRegisters.getL()));
+        break;
+    }
+    case 0x86: // ADD A, (HL)
+    {
+        mRegisters.setA(add(mRegisters.getA(), bus.read(mRegisters.getHL())));
+        break;
+    }
+    case 0x87: // ADD A, A
+    {
+        mRegisters.setA(add(mRegisters.getA(), mRegisters.getA()));
+        break;
+    }
+    case 0xc6: // ADD A, d8
+    {
+        mRegisters.setA(add(mRegisters.getA(), fetchByte(bus)));
+        break;
+    }
+    case 0xe8: // ADD SP, s8
+    {
+        int8_t s8 = fetchByte(bus);
+        uint8_t u8 = static_cast<uint8_t>(s8);
+
+        uint16_t sp = mRegisters.getSP();
+        bool setHalfCarry = (sp & 0x0f) + (u8 & 0x0f) > 0x0f;
+        bool setCarry = (sp & 0xff) + u8 > 0xff;
+        mRegisters.setSP(static_cast<uint16_t>(sp + s8));
+
+        mRegisters.setFlag(Flag::Zero, false);
+        mRegisters.setFlag(Flag::Subtraction, false);
+        mRegisters.setFlag(Flag::HalfCarry, setHalfCarry);
+        mRegisters.setFlag(Flag::Carry, setCarry);
+        break;
     }
     }
 }
@@ -742,5 +832,32 @@ uint8_t CPU::decrement(uint8_t r8)
     mRegisters.setFlag(Flag::HalfCarry, halfCarryFlag);
 
     return res;
+}
+
+uint16_t CPU::add(uint16_t first, uint16_t second)
+{
+    uint32_t res = first + second;
+
+    bool setHalfCarry = (first & 0x0fff) + (second & 0x0fff) > 0x0fff;
+    bool setCarry = res > 0xffff;
+    mRegisters.setFlag(Flag::Subtraction, false);
+    mRegisters.setFlag(Flag::HalfCarry, setHalfCarry);
+    mRegisters.setFlag(Flag::Carry, setCarry);
+
+    return static_cast<uint16_t>(res);
+}
+
+uint8_t CPU::add(uint8_t first, uint8_t second)
+{
+    uint16_t res = first + second;
+
+    bool setHalfCarry = (first & 0x0f) + (second & 0x0f) > 0x0f;
+    bool setCarry = res > 0xff;
+    mRegisters.setFlag(Flag::Zero, static_cast<uint8_t>(res) == 0);
+    mRegisters.setFlag(Flag::Subtraction, false);
+    mRegisters.setFlag(Flag::HalfCarry, setHalfCarry);
+    mRegisters.setFlag(Flag::Carry, setCarry);
+
+    return static_cast<uint8_t>(res);
 }
 } // namespace qgb
