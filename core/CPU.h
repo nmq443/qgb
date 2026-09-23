@@ -23,6 +23,7 @@ private:
     uint8_t addCarry(uint8_t first, uint8_t second);
     uint8_t subCarry(uint8_t first, uint8_t second);
     uint8_t opAnd(uint8_t first, uint8_t second);
+    uint8_t opXor(uint8_t first, uint8_t second);
 
 private:
     Registers mRegisters;

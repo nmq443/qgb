@@ -1019,6 +1019,46 @@ void CPU::step(Bus &bus)
         mRegisters.setA(opAnd(mRegisters.getA(), mRegisters.getA()));
         break;
     }
+    case 0xa8: // XOR A, B
+    {
+        mRegisters.setA(opXor(mRegisters.getA(), mRegisters.getB()));
+        break;
+    }
+    case 0xa9: // XOR A, C
+    {
+        mRegisters.setA(opXor(mRegisters.getA(), mRegisters.getC()));
+        break;
+    }
+    case 0xaa: // XOR A, D
+    {
+        mRegisters.setA(opXor(mRegisters.getA(), mRegisters.getD()));
+        break;
+    }
+    case 0xab: // XOR A, E
+    {
+        mRegisters.setA(opXor(mRegisters.getA(), mRegisters.getE()));
+        break;
+    }
+    case 0xac: // XOR A, H
+    {
+        mRegisters.setA(opXor(mRegisters.getA(), mRegisters.getH()));
+        break;
+    }
+    case 0xad: // XOR A, L
+    {
+        mRegisters.setA(opXor(mRegisters.getA(), mRegisters.getL()));
+        break;
+    }
+    case 0xae: // XOR A, (HL)
+    {
+        mRegisters.setA(opXor(mRegisters.getA(), bus.read(mRegisters.getHL())));
+        break;
+    }
+    case 0xaf: // XOR A, A
+    {
+        mRegisters.setA(opXor(mRegisters.getA(), mRegisters.getA()));
+        break;
+    }
     }
 }
 
@@ -1139,6 +1179,18 @@ uint8_t CPU::opAnd(uint8_t first, uint8_t second)
     mRegisters.setFlag(Flag::Zero, res == 0);
     mRegisters.setFlag(Flag::Subtraction, false);
     mRegisters.setFlag(Flag::HalfCarry, true);
+    mRegisters.setFlag(Flag::Carry, false);
+
+    return res;
+}
+
+uint8_t CPU::opXor(uint8_t first, uint8_t second)
+{
+    uint8_t res = first ^ second;
+
+    mRegisters.setFlag(Flag::Zero, res == 0);
+    mRegisters.setFlag(Flag::Subtraction, false);
+    mRegisters.setFlag(Flag::HalfCarry, false);
     mRegisters.setFlag(Flag::Carry, false);
 
     return res;
