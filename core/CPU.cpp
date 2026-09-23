@@ -1099,6 +1099,46 @@ void CPU::step(Bus &bus)
         mRegisters.setA(opOr(mRegisters.getA(), mRegisters.getA()));
         break;
     }
+    case 0xb8: // CP A, B
+    {
+        cp(mRegisters.getA(), mRegisters.getB());
+        break;
+    }
+    case 0xb9: // CP A, C
+    {
+        cp(mRegisters.getA(), mRegisters.getC());
+        break;
+    }
+    case 0xba: // CP A, D
+    {
+        cp(mRegisters.getA(), mRegisters.getD());
+        break;
+    }
+    case 0xbb: // CP A, E
+    {
+        cp(mRegisters.getA(), mRegisters.getE());
+        break;
+    }
+    case 0xbc: // CP A, H
+    {
+        cp(mRegisters.getA(), mRegisters.getH());
+        break;
+    }
+    case 0xbd: // CP A, L
+    {
+        cp(mRegisters.getA(), mRegisters.getL());
+        break;
+    }
+    case 0xbe: // CP A, (HL)
+    {
+        cp(mRegisters.getA(), bus.read(mRegisters.getHL()));
+        break;
+    }
+    case 0xbf: // CP A, A
+    {
+        cp(mRegisters.getA(), mRegisters.getA());
+        break;
+    }
     }
 }
 
@@ -1235,6 +1275,7 @@ uint8_t CPU::opXor(uint8_t first, uint8_t second)
 
     return res;
 }
+
 uint8_t CPU::opOr(uint8_t first, uint8_t second)
 {
     uint8_t res = first | second;
@@ -1245,5 +1286,18 @@ uint8_t CPU::opOr(uint8_t first, uint8_t second)
     mRegisters.setFlag(Flag::Carry, false);
 
     return res;
+}
+
+void CPU::cp(uint8_t first, uint8_t second)
+{
+    uint8_t res = first - second;
+
+    bool setHalfCarry = (first & 0x0f) < (second & 0x0f);
+    bool setCarry = first < second;
+
+    mRegisters.setFlag(Flag::Zero, res == 0);
+    mRegisters.setFlag(Flag::Subtraction, true);
+    mRegisters.setFlag(Flag::HalfCarry, setHalfCarry);
+    mRegisters.setFlag(Flag::Carry, setCarry);
 }
 } // namespace qgb

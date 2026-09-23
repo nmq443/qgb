@@ -25,6 +25,7 @@ private:
     uint8_t opAnd(uint8_t first, uint8_t second);
     uint8_t opXor(uint8_t first, uint8_t second);
     uint8_t opOr(uint8_t first, uint8_t second);
+    void cp(uint8_t first, uint8_t second);
 
 private:
     Registers mRegisters;
