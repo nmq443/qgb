@@ -854,6 +854,51 @@ void CPU::step(Bus &bus)
         mRegisters.setFlag(Flag::Carry, !mRegisters.getFlag(Flag::Carry));
         break;
     }
+    case 0x88: // ADC A, B
+    {
+        mRegisters.setA(addCarry(mRegisters.getA(), mRegisters.getB()));
+        break;
+    }
+    case 0x89: // ADC A, C
+    {
+        mRegisters.setA(addCarry(mRegisters.getA(), mRegisters.getC()));
+        break;
+    }
+    case 0x8a: // ADC A, D
+    {
+        mRegisters.setA(addCarry(mRegisters.getA(), mRegisters.getD()));
+        break;
+    }
+    case 0x8b: // ADC A, E
+    {
+        mRegisters.setA(addCarry(mRegisters.getA(), mRegisters.getE()));
+        break;
+    }
+    case 0x8c: // ADC A, H
+    {
+        mRegisters.setA(addCarry(mRegisters.getA(), mRegisters.getH()));
+        break;
+    }
+    case 0x8d: // ADC A, L
+    {
+        mRegisters.setA(addCarry(mRegisters.getA(), mRegisters.getL()));
+        break;
+    }
+    case 0x8e: // ADC A, (HL)
+    {
+        mRegisters.setA(addCarry(mRegisters.getA(), bus.read(mRegisters.getHL())));
+        break;
+    }
+    case 0x8f: // ADC A, A
+    {
+        mRegisters.setA(addCarry(mRegisters.getA(), mRegisters.getA()));
+        break;
+    }
+    case 0xce: // ADC A, d8
+    {
+        mRegisters.setA(addCarry(mRegisters.getA(), fetchByte(bus)));
+        break;
+    }
     }
 }
 
@@ -913,6 +958,21 @@ uint8_t CPU::add(uint8_t first, uint8_t second)
     uint16_t res = first + second;
 
     bool setHalfCarry = (first & 0x0f) + (second & 0x0f) > 0x0f;
+    bool setCarry = res > 0xff;
+    mRegisters.setFlag(Flag::Zero, static_cast<uint8_t>(res) == 0);
+    mRegisters.setFlag(Flag::Subtraction, false);
+    mRegisters.setFlag(Flag::HalfCarry, setHalfCarry);
+    mRegisters.setFlag(Flag::Carry, setCarry);
+
+    return static_cast<uint8_t>(res);
+}
+
+uint8_t CPU::addCarry(uint8_t first, uint8_t second)
+{
+    uint8_t carry = mRegisters.getFlag(Flag::Carry) ? 1 : 0;
+    uint16_t res = first + second + carry;
+
+    bool setHalfCarry = (first & 0x0f) + (second & 0x0f) + carry > 0x0f;
     bool setCarry = res > 0xff;
     mRegisters.setFlag(Flag::Zero, static_cast<uint8_t>(res) == 0);
     mRegisters.setFlag(Flag::Subtraction, false);

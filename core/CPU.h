@@ -19,6 +19,7 @@ private:
     uint8_t decrement(uint8_t r8);
     uint16_t add(uint16_t first, uint16_t second);
     uint8_t add(uint8_t first, uint8_t second);
+    uint8_t addCarry(uint8_t first, uint8_t second);
 
 private:
     Registers mRegisters;
