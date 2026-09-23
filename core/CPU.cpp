@@ -1195,6 +1195,48 @@ void CPU::step(Bus &bus)
         mRegisters.setAF(pop16(bus));
         break;
     }
+    case 0xc2: // JP NZ, a16
+    {
+        uint16_t a16 = fetchWord(bus);
+        if (!mRegisters.getFlag(Flag::Zero))
+        {
+            mRegisters.setPC(a16);
+        }
+        break;
+    }
+    case 0xd2: // JP NC, a16
+    {
+        uint16_t a16 = fetchWord(bus);
+        if (!mRegisters.getFlag(Flag::Carry))
+        {
+            mRegisters.setPC(a16);
+        }
+        break;
+    }
+    case 0xca: // JP Z, a16
+    {
+        uint16_t a16 = fetchWord(bus);
+        if (mRegisters.getFlag(Flag::Zero))
+        {
+            mRegisters.setPC(a16);
+        }
+        break;
+    }
+    case 0xda: // JP C, a16
+    {
+        uint16_t a16 = fetchWord(bus);
+        if (mRegisters.getFlag(Flag::Carry))
+        {
+            mRegisters.setPC(a16);
+        }
+        break;
+    }
+    case 0xc3: // JP a16
+    {
+        uint16_t a16 = fetchWord(bus);
+        mRegisters.setPC(a16);
+        break;
+    }
     }
 }
 
@@ -1363,6 +1405,6 @@ uint16_t CPU::pop16(Bus &bus)
     uint8_t low = bus.read(sp++);
     uint8_t high = bus.read(sp++);
     mRegisters.setSP(sp);
-    return (static_cast<uint16_t>(high) << 8) | low;
+    return makeWord(high, low);
 }
 } // namespace qgb
