@@ -939,6 +939,46 @@ void CPU::step(Bus &bus)
         mRegisters.setA(sub(mRegisters.getA(), mRegisters.getA()));
         break;
     }
+    case 0x98: // SBC A, B
+    {
+        mRegisters.setA(subCarry(mRegisters.getA(), mRegisters.getB()));
+        break;
+    }
+    case 0x99: // SBC A, C
+    {
+        mRegisters.setA(subCarry(mRegisters.getA(), mRegisters.getC()));
+        break;
+    }
+    case 0x9a: // SBC A, D
+    {
+        mRegisters.setA(subCarry(mRegisters.getA(), mRegisters.getD()));
+        break;
+    }
+    case 0x9b: // SBC A, E
+    {
+        mRegisters.setA(subCarry(mRegisters.getA(), mRegisters.getE()));
+        break;
+    }
+    case 0x9c: // SBC A, H
+    {
+        mRegisters.setA(subCarry(mRegisters.getA(), mRegisters.getH()));
+        break;
+    }
+    case 0x9d: // SBC A, L
+    {
+        mRegisters.setA(subCarry(mRegisters.getA(), mRegisters.getL()));
+        break;
+    }
+    case 0x9e: // SBC A, (HL)
+    {
+        mRegisters.setA(subCarry(mRegisters.getA(), bus.read(mRegisters.getHL())));
+        break;
+    }
+    case 0x9f: // SBC A, A
+    {
+        mRegisters.setA(subCarry(mRegisters.getA(), mRegisters.getA()));
+        break;
+    }
     }
 }
 
@@ -1028,6 +1068,22 @@ uint8_t CPU::sub(uint8_t first, uint8_t second)
 
     bool setHalfCarry = (first & 0x0f) < (second & 0x0f);
     bool setCarry = res > 0xff;
+    mRegisters.setFlag(Flag::Zero, static_cast<uint8_t>(res) == 0);
+    mRegisters.setFlag(Flag::Subtraction, true);
+    mRegisters.setFlag(Flag::HalfCarry, setHalfCarry);
+    mRegisters.setFlag(Flag::Carry, setCarry);
+
+    return static_cast<uint8_t>(res);
+}
+
+uint8_t CPU::subCarry(uint8_t first, uint8_t second)
+{
+    uint8_t carry = mRegisters.getFlag(Flag::Carry);
+    uint16_t res = first - second - carry;
+
+    bool setHalfCarry = (first & 0x0f) - (second & 0x0f) - carry < 0;
+    bool setCarry = res > 0xff;
+
     mRegisters.setFlag(Flag::Zero, static_cast<uint8_t>(res) == 0);
     mRegisters.setFlag(Flag::Subtraction, true);
     mRegisters.setFlag(Flag::HalfCarry, setHalfCarry);
