@@ -899,6 +899,46 @@ void CPU::step(Bus &bus)
         mRegisters.setA(addCarry(mRegisters.getA(), fetchByte(bus)));
         break;
     }
+    case 0x90: // SUB B
+    {
+        mRegisters.setA(sub(mRegisters.getA(), mRegisters.getB()));
+        break;
+    }
+    case 0x91: // SUB C
+    {
+        mRegisters.setA(sub(mRegisters.getA(), mRegisters.getC()));
+        break;
+    }
+    case 0x92: // SUB D
+    {
+        mRegisters.setA(sub(mRegisters.getA(), mRegisters.getD()));
+        break;
+    }
+    case 0x93: // SUB E
+    {
+        mRegisters.setA(sub(mRegisters.getA(), mRegisters.getE()));
+        break;
+    }
+    case 0x94: // SUB H
+    {
+        mRegisters.setA(sub(mRegisters.getA(), mRegisters.getH()));
+        break;
+    }
+    case 0x95: // SUB L
+    {
+        mRegisters.setA(sub(mRegisters.getA(), mRegisters.getL()));
+        break;
+    }
+    case 0x96: // SUB (HL)
+    {
+        mRegisters.setA(sub(mRegisters.getA(), bus.read(mRegisters.getHL())));
+        break;
+    }
+    case 0x97: // SUB A
+    {
+        mRegisters.setA(sub(mRegisters.getA(), mRegisters.getA()));
+        break;
+    }
     }
 }
 
@@ -976,6 +1016,20 @@ uint8_t CPU::addCarry(uint8_t first, uint8_t second)
     bool setCarry = res > 0xff;
     mRegisters.setFlag(Flag::Zero, static_cast<uint8_t>(res) == 0);
     mRegisters.setFlag(Flag::Subtraction, false);
+    mRegisters.setFlag(Flag::HalfCarry, setHalfCarry);
+    mRegisters.setFlag(Flag::Carry, setCarry);
+
+    return static_cast<uint8_t>(res);
+}
+
+uint8_t CPU::sub(uint8_t first, uint8_t second)
+{
+    uint16_t res = first - second;
+
+    bool setHalfCarry = (first & 0x0f) < (second & 0x0f);
+    bool setCarry = res > 0xff;
+    mRegisters.setFlag(Flag::Zero, static_cast<uint8_t>(res) == 0);
+    mRegisters.setFlag(Flag::Subtraction, true);
     mRegisters.setFlag(Flag::HalfCarry, setHalfCarry);
     mRegisters.setFlag(Flag::Carry, setCarry);
 
