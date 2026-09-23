@@ -1,7 +1,6 @@
 #include "CPU.h"
 #include "Utils.h"
 #include <cstdint>
-#include <regex>
 
 namespace qgb
 {
@@ -1174,6 +1173,26 @@ void CPU::step(Bus &bus)
     case 0xc9: // RET
     {
         mRegisters.setPC(pop16(bus));
+        break;
+    }
+    case 0xc1: // POP BC
+    {
+        mRegisters.setBC(pop16(bus));
+        break;
+    }
+    case 0xd1: // POP DE
+    {
+        mRegisters.setDE(pop16(bus));
+        break;
+    }
+    case 0xe1: // POP HL
+    {
+        mRegisters.setHL(pop16(bus));
+        break;
+    }
+    case 0xf1: // POP AF
+    {
+        mRegisters.setAF(pop16(bus));
         break;
     }
     }
