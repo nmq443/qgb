@@ -1143,7 +1143,7 @@ void CPU::step(Bus &bus)
     {
         if (!mRegisters.getFlag(Flag::Zero))
         {
-            ret(bus);
+            mRegisters.setPC(pop16(bus));
         }
         break;
     }
@@ -1151,7 +1151,7 @@ void CPU::step(Bus &bus)
     {
         if (!mRegisters.getFlag(Flag::Carry))
         {
-            ret(bus);
+            mRegisters.setPC(pop16(bus));
         }
         break;
     }
@@ -1159,7 +1159,7 @@ void CPU::step(Bus &bus)
     {
         if (mRegisters.getFlag(Flag::Zero))
         {
-            ret(bus);
+            mRegisters.setPC(pop16(bus));
         }
         break;
     }
@@ -1167,13 +1167,13 @@ void CPU::step(Bus &bus)
     {
         if (mRegisters.getFlag(Flag::Carry))
         {
-            ret(bus);
+            mRegisters.setPC(pop16(bus));
         }
         break;
     }
     case 0xc9: // RET
     {
-        ret(bus);
+        mRegisters.setPC(pop16(bus));
         break;
     }
     }
@@ -1338,12 +1338,12 @@ void CPU::cp(uint8_t first, uint8_t second)
     mRegisters.setFlag(Flag::Carry, setCarry);
 }
 
-void CPU::ret(Bus &bus)
+uint16_t CPU::pop16(Bus &bus)
 {
     uint16_t sp = mRegisters.getSP();
     uint8_t low = bus.read(sp++);
     uint8_t high = bus.read(sp++);
     mRegisters.setSP(sp);
-    mRegisters.setPC((static_cast<uint16_t>(high) << 8) | low);
+    return (static_cast<uint16_t>(high) << 8) | low;
 }
 } // namespace qgb
