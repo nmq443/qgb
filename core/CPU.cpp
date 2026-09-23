@@ -1059,6 +1059,46 @@ void CPU::step(Bus &bus)
         mRegisters.setA(opXor(mRegisters.getA(), mRegisters.getA()));
         break;
     }
+    case 0xb0: // OR A, B
+    {
+        mRegisters.setA(opOr(mRegisters.getA(), mRegisters.getB()));
+        break;
+    }
+    case 0xb1: // OR A, C
+    {
+        mRegisters.setA(opOr(mRegisters.getA(), mRegisters.getC()));
+        break;
+    }
+    case 0xb2: // OR A, D
+    {
+        mRegisters.setA(opOr(mRegisters.getA(), mRegisters.getD()));
+        break;
+    }
+    case 0xb3: // OR A, E
+    {
+        mRegisters.setA(opOr(mRegisters.getA(), mRegisters.getE()));
+        break;
+    }
+    case 0xb4: // OR A, H
+    {
+        mRegisters.setA(opOr(mRegisters.getA(), mRegisters.getH()));
+        break;
+    }
+    case 0xb5: // OR A, L
+    {
+        mRegisters.setA(opOr(mRegisters.getA(), mRegisters.getL()));
+        break;
+    }
+    case 0xb6: // OR A, (HL)
+    {
+        mRegisters.setA(opOr(mRegisters.getA(), bus.read(mRegisters.getHL())));
+        break;
+    }
+    case 0xb7: // OR A, A
+    {
+        mRegisters.setA(opOr(mRegisters.getA(), mRegisters.getA()));
+        break;
+    }
     }
 }
 
@@ -1187,6 +1227,17 @@ uint8_t CPU::opAnd(uint8_t first, uint8_t second)
 uint8_t CPU::opXor(uint8_t first, uint8_t second)
 {
     uint8_t res = first ^ second;
+
+    mRegisters.setFlag(Flag::Zero, res == 0);
+    mRegisters.setFlag(Flag::Subtraction, false);
+    mRegisters.setFlag(Flag::HalfCarry, false);
+    mRegisters.setFlag(Flag::Carry, false);
+
+    return res;
+}
+uint8_t CPU::opOr(uint8_t first, uint8_t second)
+{
+    uint8_t res = first | second;
 
     mRegisters.setFlag(Flag::Zero, res == 0);
     mRegisters.setFlag(Flag::Subtraction, false);
