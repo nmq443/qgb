@@ -979,6 +979,46 @@ void CPU::step(Bus &bus)
         mRegisters.setA(subCarry(mRegisters.getA(), mRegisters.getA()));
         break;
     }
+    case 0xa0: // AND A, B
+    {
+        mRegisters.setA(opAnd(mRegisters.getA(), mRegisters.getB()));
+        break;
+    }
+    case 0xa1: // AND A, C
+    {
+        mRegisters.setA(opAnd(mRegisters.getA(), mRegisters.getC()));
+        break;
+    }
+    case 0xa2: // AND A, D
+    {
+        mRegisters.setA(opAnd(mRegisters.getA(), mRegisters.getD()));
+        break;
+    }
+    case 0xa3: // AND A, E
+    {
+        mRegisters.setA(opAnd(mRegisters.getA(), mRegisters.getE()));
+        break;
+    }
+    case 0xa4: // AND A, H
+    {
+        mRegisters.setA(opAnd(mRegisters.getA(), mRegisters.getH()));
+        break;
+    }
+    case 0xa5: // AND A, L
+    {
+        mRegisters.setA(opAnd(mRegisters.getA(), mRegisters.getL()));
+        break;
+    }
+    case 0xa6: // AND A, (HL)
+    {
+        mRegisters.setA(opAnd(mRegisters.getA(), bus.read(mRegisters.getHL())));
+        break;
+    }
+    case 0xa7: // AND A, A
+    {
+        mRegisters.setA(opAnd(mRegisters.getA(), mRegisters.getA()));
+        break;
+    }
     }
 }
 
@@ -1090,5 +1130,17 @@ uint8_t CPU::subCarry(uint8_t first, uint8_t second)
     mRegisters.setFlag(Flag::Carry, setCarry);
 
     return static_cast<uint8_t>(res);
+}
+
+uint8_t CPU::opAnd(uint8_t first, uint8_t second)
+{
+    uint8_t res = first & second;
+
+    mRegisters.setFlag(Flag::Zero, res == 0);
+    mRegisters.setFlag(Flag::Subtraction, false);
+    mRegisters.setFlag(Flag::HalfCarry, true);
+    mRegisters.setFlag(Flag::Carry, false);
+
+    return res;
 }
 } // namespace qgb
