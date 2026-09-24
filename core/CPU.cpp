@@ -938,6 +938,11 @@ void CPU::step(Bus &bus)
         mRegisters.setA(sub(mRegisters.getA(), mRegisters.getA()));
         break;
     }
+    case 0xd6: // SUB d8
+    {
+        mRegisters.setA(sub(mRegisters.getA(), fetchByte(bus)));
+        break;
+    }
     case 0x98: // SBC A, B
     {
         mRegisters.setA(subCarry(mRegisters.getA(), mRegisters.getB()));
@@ -976,6 +981,11 @@ void CPU::step(Bus &bus)
     case 0x9f: // SBC A, A
     {
         mRegisters.setA(subCarry(mRegisters.getA(), mRegisters.getA()));
+        break;
+    }
+    case 0xde: // SBC A, d8
+    {
+        mRegisters.setA(subCarry(mRegisters.getA(), fetchByte(bus)));
         break;
     }
     case 0xa0: // AND A, B
@@ -1018,6 +1028,11 @@ void CPU::step(Bus &bus)
         mRegisters.setA(opAnd(mRegisters.getA(), mRegisters.getA()));
         break;
     }
+    case 0xe6: // AND A, d8
+    {
+        mRegisters.setA(opAnd(mRegisters.getA(), fetchByte(bus)));
+        break;
+    }
     case 0xa8: // XOR A, B
     {
         mRegisters.setA(opXor(mRegisters.getA(), mRegisters.getB()));
@@ -1056,6 +1071,11 @@ void CPU::step(Bus &bus)
     case 0xaf: // XOR A, A
     {
         mRegisters.setA(opXor(mRegisters.getA(), mRegisters.getA()));
+        break;
+    }
+    case 0xee: // XOR A, d8
+    {
+        mRegisters.setA(opXor(mRegisters.getA(), fetchByte(bus)));
         break;
     }
     case 0xb0: // OR A, B
@@ -1098,6 +1118,11 @@ void CPU::step(Bus &bus)
         mRegisters.setA(opOr(mRegisters.getA(), mRegisters.getA()));
         break;
     }
+    case 0xf6: // OR A, d8
+    {
+        mRegisters.setA(opOr(mRegisters.getA(), fetchByte(bus)));
+        break;
+    }
     case 0xb8: // CP A, B
     {
         cp(mRegisters.getA(), mRegisters.getB());
@@ -1136,6 +1161,11 @@ void CPU::step(Bus &bus)
     case 0xbf: // CP A, A
     {
         cp(mRegisters.getA(), mRegisters.getA());
+        break;
+    }
+    case 0xfe: // CP A, d8
+    {
+        cp(mRegisters.getA(), fetchByte(bus));
         break;
     }
     case 0xc0: // RET NZ
@@ -1295,6 +1325,13 @@ void CPU::step(Bus &bus)
             push16(bus, mRegisters.getPC());
             mRegisters.setPC(a16);
         }
+        break;
+    }
+    case 0xcd: // CALL a16
+    {
+        uint16_t a16 = fetchWord(bus);
+        push16(bus, mRegisters.getPC());
+        mRegisters.setPC(a16);
         break;
     }
     }
