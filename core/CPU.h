@@ -27,6 +27,7 @@ private:
     uint8_t opOr(uint8_t first, uint8_t second);
     void cp(uint8_t first, uint8_t second);
     uint16_t pop16(Bus &bus);
+    void push16(Bus &bus, uint16_t value);
 
 private:
     Registers mRegisters;

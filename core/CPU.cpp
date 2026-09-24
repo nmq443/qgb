@@ -1237,6 +1237,26 @@ void CPU::step(Bus &bus)
         mRegisters.setPC(a16);
         break;
     }
+    case 0xc5: // PUSH BC
+    {
+        push16(bus, mRegisters.getBC());
+        break;
+    }
+    case 0xd5: // PUSH DE
+    {
+        push16(bus, mRegisters.getDE());
+        break;
+    }
+    case 0xe5: // PUSH HL
+    {
+        push16(bus, mRegisters.getHL());
+        break;
+    }
+    case 0xf5: // PUSH AF
+    {
+        push16(bus, mRegisters.getAF());
+        break;
+    }
     }
 }
 
@@ -1406,5 +1426,14 @@ uint16_t CPU::pop16(Bus &bus)
     uint8_t high = bus.read(sp++);
     mRegisters.setSP(sp);
     return makeWord(high, low);
+}
+
+void CPU::push16(Bus &bus, uint16_t value)
+{
+    uint16_t sp = mRegisters.getSP();
+    auto [high, low] = makeBytes(value);
+    bus.write(--sp, high);
+    bus.write(--sp, low);
+    mRegisters.setSP(sp);
 }
 } // namespace qgb
