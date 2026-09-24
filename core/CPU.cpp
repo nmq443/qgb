@@ -1257,6 +1257,46 @@ void CPU::step(Bus &bus)
         push16(bus, mRegisters.getAF());
         break;
     }
+    case 0xc4: // CALL NZ, a16
+    {
+        uint16_t a16 = fetchWord(bus);
+        if (!mRegisters.getFlag(Flag::Zero))
+        {
+            push16(bus, mRegisters.getPC());
+            mRegisters.setPC(a16);
+        }
+        break;
+    }
+    case 0xd4: // CALL NC, a16
+    {
+        uint16_t a16 = fetchWord(bus);
+        if (!mRegisters.getFlag(Flag::Carry))
+        {
+            push16(bus, mRegisters.getPC());
+            mRegisters.setPC(a16);
+        }
+        break;
+    }
+    case 0xcc: // CALL Z, a16
+    {
+        uint16_t a16 = fetchWord(bus);
+        if (mRegisters.getFlag(Flag::Zero))
+        {
+            push16(bus, mRegisters.getPC());
+            mRegisters.setPC(a16);
+        }
+        break;
+    }
+    case 0xdc: // CALL C, a16
+    {
+        uint16_t a16 = fetchWord(bus);
+        if (mRegisters.getFlag(Flag::Carry))
+        {
+            push16(bus, mRegisters.getPC());
+            mRegisters.setPC(a16);
+        }
+        break;
+    }
     }
 }
 
