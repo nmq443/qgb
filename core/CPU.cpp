@@ -1334,6 +1334,54 @@ void CPU::step(Bus &bus)
         mRegisters.setPC(a16);
         break;
     }
+    case 0xc7: // RST 0
+    {
+        push16(bus, mRegisters.getPC());
+        mRegisters.setPC(0x0000);
+        break;
+    }
+    case 0xd7: // RST 2
+    {
+        push16(bus, mRegisters.getPC());
+        mRegisters.setPC(0x0010);
+        break;
+    }
+    case 0xe7: // RST 4
+    {
+        push16(bus, mRegisters.getPC());
+        mRegisters.setPC(0x0020);
+        break;
+    }
+    case 0xf7: // RST 6
+    {
+        push16(bus, mRegisters.getPC());
+        mRegisters.setPC(0x0030);
+        break;
+    }
+    case 0xcf: // RST 1
+    {
+        push16(bus, mRegisters.getPC());
+        mRegisters.setPC(0x0008);
+        break;
+    }
+    case 0xdf: // RST 3
+    {
+        push16(bus, mRegisters.getPC());
+        mRegisters.setPC(0x0018);
+        break;
+    }
+    case 0xef: // RST 5
+    {
+        push16(bus, mRegisters.getPC());
+        mRegisters.setPC(0x0028);
+        break;
+    }
+    case 0xff: // RST 7
+    {
+        push16(bus, mRegisters.getPC());
+        mRegisters.setPC(0x0038);
+        break;
+    }
     }
 }
 
