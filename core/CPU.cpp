@@ -1731,6 +1731,326 @@ void CPU::step(Bus &bus)
             mRegisters.setA(srl(mRegisters.getA()));
             break;
         }
+        case 0x40: // BIT 0, B
+        {
+            bit(mRegisters.getB(), 0);
+            break;
+        }
+        case 0x41: // BIT 0, C
+        {
+            bit(mRegisters.getC(), 0);
+            break;
+        }
+        case 0x42: // BIT 0, D
+        {
+            bit(mRegisters.getD(), 0);
+            break;
+        }
+        case 0x43: // BIT 0, E
+        {
+            bit(mRegisters.getE(), 0);
+            break;
+        }
+        case 0x44: // BIT 0, H
+        {
+            bit(mRegisters.getH(), 0);
+            break;
+        }
+        case 0x45: // BIT 0, L
+        {
+            bit(mRegisters.getL(), 0);
+            break;
+        }
+        case 0x46: // BIT 0, (HL)
+        {
+            bit(bus.read(mRegisters.getHL()), 0);
+            break;
+        }
+        case 0x47: // BIT 0, A
+        {
+            bit(mRegisters.getA(), 0);
+            break;
+        }
+        case 0x48: // BIT 1, B
+        {
+            bit(mRegisters.getB(), 1);
+            break;
+        }
+        case 0x49: // BIT 1, C
+        {
+            bit(mRegisters.getC(), 1);
+            break;
+        }
+        case 0x4a: // BIT 1, D
+        {
+            bit(mRegisters.getD(), 1);
+            break;
+        }
+        case 0x4b: // BIT 1, E
+        {
+            bit(mRegisters.getE(), 1);
+            break;
+        }
+        case 0x4c: // BIT 1, H
+        {
+            bit(mRegisters.getH(), 1);
+            break;
+        }
+        case 0x4d: // BIT 1, L
+        {
+            bit(mRegisters.getL(), 1);
+            break;
+        }
+        case 0x4e: // BIT 1, (HL)
+        {
+            bit(bus.read(mRegisters.getHL()), 1);
+            break;
+        }
+        case 0x4f: // BIT 1, A
+        {
+            bit(mRegisters.getA(), 1);
+            break;
+        }
+        case 0x50: // BIT 2, B
+        {
+            bit(mRegisters.getB(), 2);
+            break;
+        }
+        case 0x51: // BIT 2, C
+        {
+            bit(mRegisters.getC(), 2);
+            break;
+        }
+        case 0x52: // BIT 2, D
+        {
+            bit(mRegisters.getD(), 2);
+            break;
+        }
+        case 0x53: // BIT 2, E
+        {
+            bit(mRegisters.getE(), 2);
+            break;
+        }
+        case 0x54: // BIT 2, H
+        {
+            bit(mRegisters.getH(), 2);
+            break;
+        }
+        case 0x55: // BIT 2, L
+        {
+            bit(mRegisters.getL(), 2);
+            break;
+        }
+        case 0x56: // BIT 2, (HL)
+        {
+            bit(bus.read(mRegisters.getHL()), 2);
+            break;
+        }
+        case 0x57: // BIT 2, A
+        {
+            bit(mRegisters.getA(), 2);
+            break;
+        }
+        case 0x58: // BIT 3, B
+        {
+            bit(mRegisters.getB(), 3);
+            break;
+        }
+        case 0x59: // BIT 3, C
+        {
+            bit(mRegisters.getC(), 3);
+            break;
+        }
+        case 0x5a: // BIT 3, D
+        {
+            bit(mRegisters.getD(), 3);
+            break;
+        }
+        case 0x5b: // BIT 3, E
+        {
+            bit(mRegisters.getE(), 3);
+            break;
+        }
+        case 0x5c: // BIT 3, H
+        {
+            bit(mRegisters.getH(), 3);
+            break;
+        }
+        case 0x5d: // BIT 3, L
+        {
+            bit(mRegisters.getL(), 3);
+            break;
+        }
+        case 0x5e: // BIT 3, (HL)
+        {
+            bit(bus.read(mRegisters.getHL()), 3);
+            break;
+        }
+        case 0x5f: // BIT 3, A
+        {
+            bit(mRegisters.getA(), 3);
+            break;
+        }
+        case 0x60: // BIT 4, B
+        {
+            bit(mRegisters.getB(), 4);
+            break;
+        }
+        case 0x61: // BIT 4, C
+        {
+            bit(mRegisters.getC(), 4);
+            break;
+        }
+        case 0x62: // BIT 4, D
+        {
+            bit(mRegisters.getD(), 4);
+            break;
+        }
+        case 0x63: // BIT 4, E
+        {
+            bit(mRegisters.getE(), 4);
+            break;
+        }
+        case 0x64: // BIT 4, H
+        {
+            bit(mRegisters.getH(), 4);
+            break;
+        }
+        case 0x65: // BIT 4, L
+        {
+            bit(mRegisters.getL(), 4);
+            break;
+        }
+        case 0x66: // BIT 4, (HL)
+        {
+            bit(bus.read(mRegisters.getHL()), 4);
+            break;
+        }
+        case 0x67: // BIT 4, A
+        {
+            bit(mRegisters.getA(), 4);
+            break;
+        }
+        case 0x68: // BIT 5, B
+        {
+            bit(mRegisters.getB(), 5);
+            break;
+        }
+        case 0x69: // BIT 5, C
+        {
+            bit(mRegisters.getC(), 5);
+            break;
+        }
+        case 0x6a: // BIT 5, D
+        {
+            bit(mRegisters.getD(), 5);
+            break;
+        }
+        case 0x6b: // BIT 5, E
+        {
+            bit(mRegisters.getE(), 5);
+            break;
+        }
+        case 0x6c: // BIT 5, H
+        {
+            bit(mRegisters.getH(), 5);
+            break;
+        }
+        case 0x6d: // BIT 5, L
+        {
+            bit(mRegisters.getL(), 5);
+            break;
+        }
+        case 0x6e: // BIT 5, (HL)
+        {
+            bit(bus.read(mRegisters.getHL()), 5);
+            break;
+        }
+        case 0x6f: // BIT 5, A
+        {
+            bit(mRegisters.getA(), 5);
+            break;
+        }
+        case 0x70: // BIT 6, B
+        {
+            bit(mRegisters.getB(), 6);
+            break;
+        }
+        case 0x71: // BIT 6, C
+        {
+            bit(mRegisters.getC(), 6);
+            break;
+        }
+        case 0x72: // BIT 6, D
+        {
+            bit(mRegisters.getD(), 6);
+            break;
+        }
+        case 0x73: // BIT 6, E
+        {
+            bit(mRegisters.getE(), 6);
+            break;
+        }
+        case 0x74: // BIT 6, H
+        {
+            bit(mRegisters.getH(), 6);
+            break;
+        }
+        case 0x75: // BIT 6, L
+        {
+            bit(mRegisters.getL(), 6);
+            break;
+        }
+        case 0x76: // BIT 6, (HL)
+        {
+            bit(bus.read(mRegisters.getHL()), 6);
+            break;
+        }
+        case 0x77: // BIT 6, A
+        {
+            bit(mRegisters.getA(), 6);
+            break;
+        }
+        case 0x78: // BIT 7, B
+        {
+            bit(mRegisters.getB(), 7);
+            break;
+        }
+        case 0x79: // BIT 7, C
+        {
+            bit(mRegisters.getC(), 7);
+            break;
+        }
+        case 0x7a: // BIT 7, D
+        {
+            bit(mRegisters.getD(), 7);
+            break;
+        }
+        case 0x7b: // BIT 7, E
+        {
+            bit(mRegisters.getE(), 7);
+            break;
+        }
+        case 0x7c: // BIT 7, H
+        {
+            bit(mRegisters.getH(), 7);
+            break;
+        }
+        case 0x7d: // BIT 7, L
+        {
+            bit(mRegisters.getL(), 7);
+            break;
+        }
+        case 0x7e: // BIT 7, (HL)
+        {
+            bit(bus.read(mRegisters.getHL()), 7);
+            break;
+        }
+        case 0x7f: // BIT 7, A
+        {
+            bit(mRegisters.getA(), 7);
+            break;
+        }
         }
         break;
     }
@@ -2033,5 +2353,13 @@ uint8_t CPU::srl(uint8_t reg)
     mRegisters.setFlag(Flag::Carry, 1 == bit0);
 
     return reg;
+}
+
+void CPU::bit(uint8_t reg, uint8_t bitIndex)
+{
+    bool isSet = (reg >> bitIndex) & 1;
+    mRegisters.setFlag(Flag::Zero, !isSet);
+    mRegisters.setFlag(Flag::Subtraction, false);
+    mRegisters.setFlag(Flag::HalfCarry, true);
 }
 } // namespace qgb
