@@ -1,6 +1,7 @@
 #include "CPU.h"
 #include "Utils.h"
 #include <cstdint>
+#include <stdexcept>
 
 namespace qgb
 {
@@ -1382,6 +1383,42 @@ void CPU::step(Bus &bus)
         mRegisters.setPC(0x0038);
         break;
     }
+    case 0x10: // STOP (0x1000)
+    {
+        fetchByte(bus);    // Fetch required 2nd byte (0x00)
+        mIsStopped = true; // Pause CPU execution until button press/reset
+        break;
+    }
+    case 0x76: // HALT
+    {
+        mHalted = true;
+        break;
+    }
+    case 0xf3: // DI
+    {
+        mIME = false;
+        mIMEEnablePending = false;
+        mIMEEnableScheduled = false;
+        break;
+    }
+    case 0xfb: // EI
+    {
+        mIMEEnablePending = true;
+        break;
+    }
+    default:
+        throw std::runtime_error(std::format("{} is not supported!", opcode));
+    }
+
+    if (mIMEEnableScheduled)
+    {
+        mIME = true;
+        mIMEEnableScheduled = false;
+    }
+    else if (mIMEEnablePending)
+    {
+        mIMEEnableScheduled = true;
+        mIMEEnablePending = false;
     }
 }
 

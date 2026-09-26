@@ -31,5 +31,10 @@ private:
 
 private:
     Registers mRegisters;
+    bool mIsStopped = false;
+    bool mHalted = false;
+    bool mIME = false;
+    bool mIMEEnableScheduled = false;
+    bool mIMEEnablePending = false;
 };
 } // namespace qgb
