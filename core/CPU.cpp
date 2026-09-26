@@ -1651,6 +1651,46 @@ void CPU::step(Bus &bus)
             mRegisters.setA(sra(mRegisters.getA()));
             break;
         }
+        case 0x30: // SWAP B
+        {
+            mRegisters.setB(swap(mRegisters.getB()));
+            break;
+        }
+        case 0x31: // SWAP C
+        {
+            mRegisters.setC(swap(mRegisters.getC()));
+            break;
+        }
+        case 0x32: // SWAP D
+        {
+            mRegisters.setD(swap(mRegisters.getD()));
+            break;
+        }
+        case 0x33: // SWAP E
+        {
+            mRegisters.setE(swap(mRegisters.getE()));
+            break;
+        }
+        case 0x34: // SWAP H
+        {
+            mRegisters.setH(swap(mRegisters.getH()));
+            break;
+        }
+        case 0x35: // SWAP L
+        {
+            mRegisters.setL(swap(mRegisters.getL()));
+            break;
+        }
+        case 0x36: // SWAP (HL)
+        {
+            bus.write(mRegisters.getHL(), swap(bus.read(mRegisters.getHL())));
+            break;
+        }
+        case 0x37: // SWAP A
+        {
+            mRegisters.setA(swap(mRegisters.getA()));
+            break;
+        }
         }
         break;
     }
@@ -1926,6 +1966,18 @@ uint8_t CPU::sra(uint8_t reg)
     mRegisters.setFlag(Flag::Subtraction, false);
     mRegisters.setFlag(Flag::HalfCarry, false);
     mRegisters.setFlag(Flag::Carry, 1 == bit0);
+
+    return reg;
+}
+
+uint8_t CPU::swap(uint8_t reg)
+{
+    reg = (reg << 4) | (reg >> 4);
+
+    mRegisters.setFlag(Flag::Zero, 0 == reg);
+    mRegisters.setFlag(Flag::Subtraction, false);
+    mRegisters.setFlag(Flag::HalfCarry, false);
+    mRegisters.setFlag(Flag::Carry, false);
 
     return reg;
 }
