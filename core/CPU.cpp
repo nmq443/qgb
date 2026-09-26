@@ -1406,6 +1406,54 @@ void CPU::step(Bus &bus)
         mIMEEnablePending = true;
         break;
     }
+    case 0xcb: // 16-bit opcodes
+    {
+        uint8_t secondByte = fetchByte(bus);
+        switch (secondByte)
+        {
+        case 0x00: // RLC B
+        {
+            mRegisters.setB(rlc(mRegisters.getB()));
+            break;
+        }
+        case 0x01: // RLC C
+        {
+            mRegisters.setC(rlc(mRegisters.getC()));
+            break;
+        }
+        case 0x02: // RLC D
+        {
+            mRegisters.setD(rlc(mRegisters.getD()));
+            break;
+        }
+        case 0x03: // RLC E
+        {
+            mRegisters.setE(rlc(mRegisters.getE()));
+            break;
+        }
+        case 0x04: // RLC H
+        {
+            mRegisters.setH(rlc(mRegisters.getH()));
+            break;
+        }
+        case 0x05: // RLC L
+        {
+            mRegisters.setL(rlc(mRegisters.getL()));
+            break;
+        }
+        case 0x06: // RLC (HL)
+        {
+            bus.write(mRegisters.getHL(), rlc(bus.read(mRegisters.getHL())));
+            break;
+        }
+        case 0x07: // RLC A
+        {
+            mRegisters.setA(rlc(mRegisters.getA()));
+            break;
+        }
+        }
+        break;
+    }
     default:
         throw std::runtime_error(std::format("{} is not supported!", opcode));
     }
@@ -1597,5 +1645,17 @@ void CPU::push16(Bus &bus, uint16_t value)
     bus.write(--sp, high);
     bus.write(--sp, low);
     mRegisters.setSP(sp);
+}
+uint8_t CPU::rlc(uint8_t reg)
+{
+    uint8_t bit7 = reg >> 7;
+    reg = (reg << 1) | bit7;
+
+    mRegisters.setFlag(Flag::Zero, reg == 0);
+    mRegisters.setFlag(Flag::Subtraction, false);
+    mRegisters.setFlag(Flag::HalfCarry, false);
+    mRegisters.setFlag(Flag::Carry, bit7 == 0x01);
+
+    return reg;
 }
 } // namespace qgb
