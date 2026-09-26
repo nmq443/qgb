@@ -33,6 +33,7 @@ private:
     uint8_t rrc(uint8_t reg);
     uint8_t rr(uint8_t reg);
     uint8_t sla(uint8_t reg);
+    uint8_t sra(uint8_t reg);
 
 private:
     Registers mRegisters;

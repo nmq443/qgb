@@ -1611,6 +1611,46 @@ void CPU::step(Bus &bus)
             mRegisters.setA(sla(mRegisters.getA()));
             break;
         }
+        case 0x28: // SRA B
+        {
+            mRegisters.setB(sra(mRegisters.getB()));
+            break;
+        }
+        case 0x29: // SRA C
+        {
+            mRegisters.setC(sra(mRegisters.getC()));
+            break;
+        }
+        case 0x2a: // SRA D
+        {
+            mRegisters.setD(sra(mRegisters.getD()));
+            break;
+        }
+        case 0x2b: // SRA E
+        {
+            mRegisters.setE(sra(mRegisters.getE()));
+            break;
+        }
+        case 0x2c: // SRA H
+        {
+            mRegisters.setH(sra(mRegisters.getH()));
+            break;
+        }
+        case 0x2d: // SRA L
+        {
+            mRegisters.setL(sra(mRegisters.getL()));
+            break;
+        }
+        case 0x2e: // SRA (HL)
+        {
+            bus.write(mRegisters.getHL(), sra(bus.read(mRegisters.getHL())));
+            break;
+        }
+        case 0x2f: // SRA A
+        {
+            mRegisters.setA(sra(mRegisters.getA()));
+            break;
+        }
         }
         break;
     }
@@ -1872,6 +1912,20 @@ uint8_t CPU::sla(uint8_t reg)
     mRegisters.setFlag(Flag::Subtraction, false);
     mRegisters.setFlag(Flag::HalfCarry, false);
     mRegisters.setFlag(Flag::Carry, 1 == bit7);
+
+    return reg;
+}
+
+uint8_t CPU::sra(uint8_t reg)
+{
+    uint8_t bit0 = reg & 0x01;
+    uint8_t bit7 = reg & 0x80; // Keep original bit 7
+    reg = (reg >> 1) | bit7;   // Shift right and restore bit 7
+
+    mRegisters.setFlag(Flag::Zero, 0 == reg);
+    mRegisters.setFlag(Flag::Subtraction, false);
+    mRegisters.setFlag(Flag::HalfCarry, false);
+    mRegisters.setFlag(Flag::Carry, 1 == bit0);
 
     return reg;
 }
