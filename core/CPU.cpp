@@ -1451,6 +1451,46 @@ void CPU::step(Bus &bus)
             mRegisters.setA(rlc(mRegisters.getA()));
             break;
         }
+        case 0x10: // RL B
+        {
+            mRegisters.setB(rl(mRegisters.getB()));
+            break;
+        }
+        case 0x11: // RL C
+        {
+            mRegisters.setC(rl(mRegisters.getC()));
+            break;
+        }
+        case 0x12: // RL D
+        {
+            mRegisters.setD(rl(mRegisters.getD()));
+            break;
+        }
+        case 0x13: // RL E
+        {
+            mRegisters.setE(rl(mRegisters.getE()));
+            break;
+        }
+        case 0x14: // RL H
+        {
+            mRegisters.setH(rl(mRegisters.getH()));
+            break;
+        }
+        case 0x15: // RL L
+        {
+            mRegisters.setL(rl(mRegisters.getL()));
+            break;
+        }
+        case 0x16: // RL (HL)
+        {
+            bus.write(mRegisters.getHL(), rl(bus.read(mRegisters.getHL())));
+            break;
+        }
+        case 0x17: // RL A
+        {
+            mRegisters.setA(rl(mRegisters.getA()));
+            break;
+        }
         }
         break;
     }
@@ -1646,15 +1686,31 @@ void CPU::push16(Bus &bus, uint16_t value)
     bus.write(--sp, low);
     mRegisters.setSP(sp);
 }
+
 uint8_t CPU::rlc(uint8_t reg)
 {
-    uint8_t bit7 = reg >> 7;
+    uint8_t bit7 = (reg >> 7) & 0x01;
     reg = (reg << 1) | bit7;
 
     mRegisters.setFlag(Flag::Zero, reg == 0);
     mRegisters.setFlag(Flag::Subtraction, false);
     mRegisters.setFlag(Flag::HalfCarry, false);
     mRegisters.setFlag(Flag::Carry, bit7 == 0x01);
+
+    return reg;
+}
+
+uint8_t CPU::rl(uint8_t reg)
+{
+    uint8_t bit7 = (reg >> 7) & 0x01;
+    uint8_t oldCarry = mRegisters.getFlag(Flag::Carry) ? 1 : 0;
+
+    reg = (reg << 1) | oldCarry;
+
+    mRegisters.setFlag(Flag::Zero, reg == 0);
+    mRegisters.setFlag(Flag::Subtraction, false);
+    mRegisters.setFlag(Flag::HalfCarry, false);
+    mRegisters.setFlag(Flag::Carry, bit7 == 1);
 
     return reg;
 }

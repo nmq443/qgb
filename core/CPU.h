@@ -29,6 +29,7 @@ private:
     uint16_t pop16(Bus &bus);
     void push16(Bus &bus, uint16_t value);
     uint8_t rlc(uint8_t reg);
+    uint8_t rl(uint8_t reg);
 
 private:
     Registers mRegisters;
