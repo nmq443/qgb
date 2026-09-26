@@ -1691,6 +1691,46 @@ void CPU::step(Bus &bus)
             mRegisters.setA(swap(mRegisters.getA()));
             break;
         }
+        case 0x38: // SRL B
+        {
+            mRegisters.setB(srl(mRegisters.getB()));
+            break;
+        }
+        case 0x39: // SRL C
+        {
+            mRegisters.setC(srl(mRegisters.getC()));
+            break;
+        }
+        case 0x3a: // SRL D
+        {
+            mRegisters.setD(srl(mRegisters.getD()));
+            break;
+        }
+        case 0x3b: // SRL E
+        {
+            mRegisters.setE(srl(mRegisters.getE()));
+            break;
+        }
+        case 0x3c: // SRL H
+        {
+            mRegisters.setH(srl(mRegisters.getH()));
+            break;
+        }
+        case 0x3d: // SRL L
+        {
+            mRegisters.setL(srl(mRegisters.getL()));
+            break;
+        }
+        case 0x3e: // SRL (HL)
+        {
+            bus.write(mRegisters.getHL(), srl(bus.read(mRegisters.getHL())));
+            break;
+        }
+        case 0x3f: // SRL A
+        {
+            mRegisters.setA(srl(mRegisters.getA()));
+            break;
+        }
         }
         break;
     }
@@ -1978,6 +2018,19 @@ uint8_t CPU::swap(uint8_t reg)
     mRegisters.setFlag(Flag::Subtraction, false);
     mRegisters.setFlag(Flag::HalfCarry, false);
     mRegisters.setFlag(Flag::Carry, false);
+
+    return reg;
+}
+
+uint8_t CPU::srl(uint8_t reg)
+{
+    uint8_t bit0 = reg & 1;
+    reg >>= 1;
+
+    mRegisters.setFlag(Flag::Zero, 0 == reg);
+    mRegisters.setFlag(Flag::Subtraction, false);
+    mRegisters.setFlag(Flag::HalfCarry, false);
+    mRegisters.setFlag(Flag::Carry, 1 == bit0);
 
     return reg;
 }
