@@ -1531,6 +1531,46 @@ void CPU::step(Bus &bus)
             mRegisters.setA(rrc(mRegisters.getA()));
             break;
         }
+        case 0x18: // RR B
+        {
+            mRegisters.setB(rr(mRegisters.getB()));
+            break;
+        }
+        case 0x19: // RR C
+        {
+            mRegisters.setC(rr(mRegisters.getC()));
+            break;
+        }
+        case 0x1a: // RR D
+        {
+            mRegisters.setD(rr(mRegisters.getD()));
+            break;
+        }
+        case 0x1b: // RR E
+        {
+            mRegisters.setE(rr(mRegisters.getE()));
+            break;
+        }
+        case 0x1c: // RR H
+        {
+            mRegisters.setH(rr(mRegisters.getH()));
+            break;
+        }
+        case 0x1d: // RR L
+        {
+            mRegisters.setL(rr(mRegisters.getL()));
+            break;
+        }
+        case 0x1e: // RR (HL)
+        {
+            bus.write(mRegisters.getHL(), rr(bus.read(mRegisters.getHL())));
+            break;
+        }
+        case 0x1f: // RR A
+        {
+            mRegisters.setA(rr(mRegisters.getA()));
+            break;
+        }
         }
         break;
     }
@@ -1732,10 +1772,10 @@ uint8_t CPU::rlc(uint8_t reg)
     uint8_t bit7 = (reg >> 7) & 0x01;
     reg = (reg << 1) | bit7;
 
-    mRegisters.setFlag(Flag::Zero, reg == 0);
+    mRegisters.setFlag(Flag::Zero, 0 == reg);
     mRegisters.setFlag(Flag::Subtraction, false);
     mRegisters.setFlag(Flag::HalfCarry, false);
-    mRegisters.setFlag(Flag::Carry, bit7 == 0x01);
+    mRegisters.setFlag(Flag::Carry, 1 == bit7);
 
     return reg;
 }
@@ -1747,10 +1787,10 @@ uint8_t CPU::rl(uint8_t reg)
 
     reg = (reg << 1) | oldCarry;
 
-    mRegisters.setFlag(Flag::Zero, reg == 0);
+    mRegisters.setFlag(Flag::Zero, 0 == reg);
     mRegisters.setFlag(Flag::Subtraction, false);
     mRegisters.setFlag(Flag::HalfCarry, false);
-    mRegisters.setFlag(Flag::Carry, bit7 == 1);
+    mRegisters.setFlag(Flag::Carry, 1 == bit7);
 
     return reg;
 }
@@ -1763,7 +1803,22 @@ uint8_t CPU::rrc(uint8_t reg)
     mRegisters.setFlag(Flag::Zero, 0 == reg);
     mRegisters.setFlag(Flag::Subtraction, false);
     mRegisters.setFlag(Flag::HalfCarry, false);
-    mRegisters.setFlag(Flag::Carry, bit0 == 0x01);
+    mRegisters.setFlag(Flag::Carry, 1 == bit0);
+
+    return reg;
+}
+
+uint8_t CPU::rr(uint8_t reg)
+{
+    uint8_t bit0 = reg & 0x01;
+    uint8_t oldCarry = mRegisters.getFlag(Flag::Carry) ? 1 : 0;
+
+    reg = (reg >> 1) | (oldCarry << 7);
+
+    mRegisters.setFlag(Flag::Zero, 0 == reg);
+    mRegisters.setFlag(Flag::Subtraction, false);
+    mRegisters.setFlag(Flag::HalfCarry, false);
+    mRegisters.setFlag(Flag::Carry, 1 == bit0);
 
     return reg;
 }
