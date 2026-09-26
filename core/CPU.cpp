@@ -1491,6 +1491,46 @@ void CPU::step(Bus &bus)
             mRegisters.setA(rl(mRegisters.getA()));
             break;
         }
+        case 0x08: // RRC B
+        {
+            mRegisters.setB(rrc(mRegisters.getB()));
+            break;
+        }
+        case 0x09: // RRC C
+        {
+            mRegisters.setC(rrc(mRegisters.getC()));
+            break;
+        }
+        case 0x0a: // RRC D
+        {
+            mRegisters.setD(rrc(mRegisters.getD()));
+            break;
+        }
+        case 0x0b: // RRC E
+        {
+            mRegisters.setE(rrc(mRegisters.getE()));
+            break;
+        }
+        case 0x0c: // RRC H
+        {
+            mRegisters.setH(rrc(mRegisters.getH()));
+            break;
+        }
+        case 0x0d: // RRC L
+        {
+            mRegisters.setL(rrc(mRegisters.getL()));
+            break;
+        }
+        case 0x0e: // RRC (HL)
+        {
+            bus.write(mRegisters.getHL(), rrc(bus.read(mRegisters.getHL())));
+            break;
+        }
+        case 0x0f: // RRC A
+        {
+            mRegisters.setA(rrc(mRegisters.getA()));
+            break;
+        }
         }
         break;
     }
@@ -1711,6 +1751,19 @@ uint8_t CPU::rl(uint8_t reg)
     mRegisters.setFlag(Flag::Subtraction, false);
     mRegisters.setFlag(Flag::HalfCarry, false);
     mRegisters.setFlag(Flag::Carry, bit7 == 1);
+
+    return reg;
+}
+
+uint8_t CPU::rrc(uint8_t reg)
+{
+    uint8_t bit0 = reg & 0x01;
+    reg = (reg >> 1) | (bit0 << 7);
+
+    mRegisters.setFlag(Flag::Zero, 0 == reg);
+    mRegisters.setFlag(Flag::Subtraction, false);
+    mRegisters.setFlag(Flag::HalfCarry, false);
+    mRegisters.setFlag(Flag::Carry, bit0 == 0x01);
 
     return reg;
 }

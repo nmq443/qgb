@@ -30,6 +30,7 @@ private:
     void push16(Bus &bus, uint16_t value);
     uint8_t rlc(uint8_t reg);
     uint8_t rl(uint8_t reg);
+    uint8_t rrc(uint8_t reg);
 
 private:
     Registers mRegisters;
