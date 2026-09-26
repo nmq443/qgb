@@ -2051,6 +2051,326 @@ void CPU::step(Bus &bus)
             bit(mRegisters.getA(), 7);
             break;
         }
+        case 0x80: // RES 0, B
+        {
+            mRegisters.setB(res(mRegisters.getB(), 0));
+            break;
+        }
+        case 0x81: // RES 0, C
+        {
+            mRegisters.setC(res(mRegisters.getC(), 0));
+            break;
+        }
+        case 0x82: // RES 0, D
+        {
+            mRegisters.setD(res(mRegisters.getD(), 0));
+            break;
+        }
+        case 0x83: // RES 0, E
+        {
+            mRegisters.setE(res(mRegisters.getE(), 0));
+            break;
+        }
+        case 0x84: // RES 0, H
+        {
+            mRegisters.setH(res(mRegisters.getH(), 0));
+            break;
+        }
+        case 0x85: // RES 0, L
+        {
+            mRegisters.setL(res(mRegisters.getL(), 0));
+            break;
+        }
+        case 0x86: // RES 0, (HL)
+        {
+            bus.write(mRegisters.getHL(), res(bus.read(mRegisters.getHL()), 0));
+            break;
+        }
+        case 0x87: // RES 0, A
+        {
+            mRegisters.setA(res(mRegisters.getA(), 0));
+            break;
+        }
+        case 0x88: // RES 1, B
+        {
+            mRegisters.setB(res(mRegisters.getB(), 1));
+            break;
+        }
+        case 0x89: // RES 1, C
+        {
+            mRegisters.setC(res(mRegisters.getC(), 1));
+            break;
+        }
+        case 0x8a: // RES 1, D
+        {
+            mRegisters.setD(res(mRegisters.getD(), 1));
+            break;
+        }
+        case 0x8b: // RES 1, E
+        {
+            mRegisters.setE(res(mRegisters.getE(), 1));
+            break;
+        }
+        case 0x8c: // RES 1, H
+        {
+            mRegisters.setH(res(mRegisters.getH(), 1));
+            break;
+        }
+        case 0x8d: // RES 1, L
+        {
+            mRegisters.setL(res(mRegisters.getL(), 1));
+            break;
+        }
+        case 0x8e: // RES 1, (HL)
+        {
+            bus.write(mRegisters.getHL(), res(bus.read(mRegisters.getHL()), 1));
+            break;
+        }
+        case 0x8f: // RES 1, A
+        {
+            mRegisters.setA(res(mRegisters.getA(), 1));
+            break;
+        }
+        case 0x90: // RES 2, B
+        {
+            mRegisters.setB(res(mRegisters.getB(), 2));
+            break;
+        }
+        case 0x91: // RES 2, C
+        {
+            mRegisters.setC(res(mRegisters.getC(), 2));
+            break;
+        }
+        case 0x92: // RES 2, D
+        {
+            mRegisters.setD(res(mRegisters.getD(), 2));
+            break;
+        }
+        case 0x93: // RES 2, E
+        {
+            mRegisters.setE(res(mRegisters.getE(), 2));
+            break;
+        }
+        case 0x94: // RES 2, H
+        {
+            mRegisters.setH(res(mRegisters.getH(), 2));
+            break;
+        }
+        case 0x95: // RES 2, L
+        {
+            mRegisters.setL(res(mRegisters.getL(), 2));
+            break;
+        }
+        case 0x96: // RES 2, (HL)
+        {
+            bus.write(mRegisters.getHL(), res(bus.read(mRegisters.getHL()), 2));
+            break;
+        }
+        case 0x97: // RES 2, A
+        {
+            mRegisters.setA(res(mRegisters.getA(), 2));
+            break;
+        }
+        case 0x98: // RES 3, B
+        {
+            mRegisters.setB(res(mRegisters.getB(), 3));
+            break;
+        }
+        case 0x99: // RES 3, C
+        {
+            mRegisters.setC(res(mRegisters.getC(), 3));
+            break;
+        }
+        case 0x9a: // RES 3, D
+        {
+            mRegisters.setD(res(mRegisters.getD(), 3));
+            break;
+        }
+        case 0x9b: // RES 3, E
+        {
+            mRegisters.setE(res(mRegisters.getE(), 3));
+            break;
+        }
+        case 0x9c: // RES 3, H
+        {
+            mRegisters.setH(res(mRegisters.getH(), 3));
+            break;
+        }
+        case 0x9d: // RES 3, L
+        {
+            mRegisters.setL(res(mRegisters.getL(), 3));
+            break;
+        }
+        case 0x9e: // RES 3, (HL)
+        {
+            bus.write(mRegisters.getHL(), res(bus.read(mRegisters.getHL()), 3));
+            break;
+        }
+        case 0x9f: // RES 3, A
+        {
+            mRegisters.setA(res(mRegisters.getA(), 3));
+            break;
+        }
+        case 0xa0: // RES 4, B
+        {
+            mRegisters.setB(res(mRegisters.getB(), 4));
+            break;
+        }
+        case 0xa1: // RES 4, C
+        {
+            mRegisters.setC(res(mRegisters.getC(), 4));
+            break;
+        }
+        case 0xa2: // RES 4, D
+        {
+            mRegisters.setD(res(mRegisters.getD(), 4));
+            break;
+        }
+        case 0xa3: // RES 4, E
+        {
+            mRegisters.setE(res(mRegisters.getE(), 4));
+            break;
+        }
+        case 0xa4: // RES 4, H
+        {
+            mRegisters.setH(res(mRegisters.getH(), 4));
+            break;
+        }
+        case 0xa5: // RES 4, L
+        {
+            mRegisters.setL(res(mRegisters.getL(), 4));
+            break;
+        }
+        case 0xa6: // RES 4, (HL)
+        {
+            bus.write(mRegisters.getHL(), res(bus.read(mRegisters.getHL()), 4));
+            break;
+        }
+        case 0xa7: // RES 4, A
+        {
+            mRegisters.setA(res(mRegisters.getA(), 4));
+            break;
+        }
+        case 0xa8: // RES 5, B
+        {
+            mRegisters.setB(res(mRegisters.getB(), 5));
+            break;
+        }
+        case 0xa9: // RES 5, C
+        {
+            mRegisters.setC(res(mRegisters.getC(), 5));
+            break;
+        }
+        case 0xaa: // RES 5, D
+        {
+            mRegisters.setD(res(mRegisters.getD(), 5));
+            break;
+        }
+        case 0xab: // RES 5, E
+        {
+            mRegisters.setE(res(mRegisters.getE(), 5));
+            break;
+        }
+        case 0xac: // RES 5, H
+        {
+            mRegisters.setH(res(mRegisters.getH(), 5));
+            break;
+        }
+        case 0xad: // RES 5, L
+        {
+            mRegisters.setL(res(mRegisters.getL(), 5));
+            break;
+        }
+        case 0xae: // RES 5, (HL)
+        {
+            bus.write(mRegisters.getHL(), res(bus.read(mRegisters.getHL()), 5));
+            break;
+        }
+        case 0xaf: // RES 5, A
+        {
+            mRegisters.setA(res(mRegisters.getA(), 5));
+            break;
+        }
+        case 0xb0: // RES 6, B
+        {
+            mRegisters.setB(res(mRegisters.getB(), 6));
+            break;
+        }
+        case 0xb1: // RES 6, C
+        {
+            mRegisters.setC(res(mRegisters.getC(), 6));
+            break;
+        }
+        case 0xb2: // RES 6, D
+        {
+            mRegisters.setD(res(mRegisters.getD(), 6));
+            break;
+        }
+        case 0xb3: // RES 6, E
+        {
+            mRegisters.setE(res(mRegisters.getE(), 6));
+            break;
+        }
+        case 0xb4: // RES 6, H
+        {
+            mRegisters.setH(res(mRegisters.getH(), 6));
+            break;
+        }
+        case 0xb5: // RES 6, L
+        {
+            mRegisters.setL(res(mRegisters.getL(), 6));
+            break;
+        }
+        case 0xb6: // RES 6, (HL)
+        {
+            bus.write(mRegisters.getHL(), res(bus.read(mRegisters.getHL()), 6));
+            break;
+        }
+        case 0xb7: // RES 6, A
+        {
+            mRegisters.setA(res(mRegisters.getA(), 6));
+            break;
+        }
+        case 0xb8: // RES 7, B
+        {
+            mRegisters.setB(res(mRegisters.getB(), 7));
+            break;
+        }
+        case 0xb9: // RES 7, C
+        {
+            mRegisters.setC(res(mRegisters.getC(), 7));
+            break;
+        }
+        case 0xba: // RES 7, D
+        {
+            mRegisters.setD(res(mRegisters.getD(), 7));
+            break;
+        }
+        case 0xbb: // RES 7, E
+        {
+            mRegisters.setE(res(mRegisters.getE(), 7));
+            break;
+        }
+        case 0xbc: // RES 7, H
+        {
+            mRegisters.setH(res(mRegisters.getH(), 7));
+            break;
+        }
+        case 0xbd: // RES 7, L
+        {
+            mRegisters.setL(res(mRegisters.getL(), 7));
+            break;
+        }
+        case 0xbe: // RES 7, (HL)
+        {
+            bus.write(mRegisters.getHL(), res(bus.read(mRegisters.getHL()), 7));
+            break;
+        }
+        case 0xbf: // RES 7, A
+        {
+            mRegisters.setA(res(mRegisters.getA(), 7));
+            break;
+        }
         }
         break;
     }
@@ -2361,5 +2681,10 @@ void CPU::bit(uint8_t reg, uint8_t bitIndex)
     mRegisters.setFlag(Flag::Zero, !isSet);
     mRegisters.setFlag(Flag::Subtraction, false);
     mRegisters.setFlag(Flag::HalfCarry, true);
+}
+
+uint8_t CPU::res(uint8_t reg, uint8_t bitIndex)
+{
+    return reg & ~(1 << bitIndex);
 }
 } // namespace qgb

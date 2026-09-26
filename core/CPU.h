@@ -37,6 +37,7 @@ private:
     uint8_t swap(uint8_t reg);
     uint8_t srl(uint8_t reg);
     void bit(uint8_t reg, uint8_t bitIndex);
+    uint8_t res(uint8_t reg, uint8_t bitIndex);
 
 private:
     Registers mRegisters;
