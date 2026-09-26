@@ -2371,6 +2371,326 @@ void CPU::step(Bus &bus)
             mRegisters.setA(res(mRegisters.getA(), 7));
             break;
         }
+        case 0xc0: // SET 0, B
+        {
+            mRegisters.setB(set(mRegisters.getB(), 0));
+            break;
+        }
+        case 0xc1: // SET 0, C
+        {
+            mRegisters.setC(set(mRegisters.getC(), 0));
+            break;
+        }
+        case 0xc2: // SET 0, D
+        {
+            mRegisters.setD(set(mRegisters.getD(), 0));
+            break;
+        }
+        case 0xc3: // SET 0, E
+        {
+            mRegisters.setE(set(mRegisters.getE(), 0));
+            break;
+        }
+        case 0xc4: // SET 0, H
+        {
+            mRegisters.setH(set(mRegisters.getH(), 0));
+            break;
+        }
+        case 0xc5: // SET 0, L
+        {
+            mRegisters.setL(set(mRegisters.getL(), 0));
+            break;
+        }
+        case 0xc6: // SET 0, (HL)
+        {
+            bus.write(mRegisters.getHL(), set(bus.read(mRegisters.getHL()), 0));
+            break;
+        }
+        case 0xc7: // SET 0, A
+        {
+            mRegisters.setA(set(mRegisters.getA(), 0));
+            break;
+        }
+        case 0xc8: // SET 1, B
+        {
+            mRegisters.setB(set(mRegisters.getB(), 1));
+            break;
+        }
+        case 0xc9: // SET 1, C
+        {
+            mRegisters.setC(set(mRegisters.getC(), 1));
+            break;
+        }
+        case 0xca: // SET 1, D
+        {
+            mRegisters.setD(set(mRegisters.getD(), 1));
+            break;
+        }
+        case 0xcb: // SET 1, E
+        {
+            mRegisters.setE(set(mRegisters.getE(), 1));
+            break;
+        }
+        case 0xcc: // SET 1, H
+        {
+            mRegisters.setH(set(mRegisters.getH(), 1));
+            break;
+        }
+        case 0xcd: // SET 1, L
+        {
+            mRegisters.setL(set(mRegisters.getL(), 1));
+            break;
+        }
+        case 0xce: // SET 1, (HL)
+        {
+            bus.write(mRegisters.getHL(), set(bus.read(mRegisters.getHL()), 1));
+            break;
+        }
+        case 0xcf: // SET 1, A
+        {
+            mRegisters.setA(set(mRegisters.getA(), 1));
+            break;
+        }
+        case 0xd0: // SET 2, B
+        {
+            mRegisters.setB(set(mRegisters.getB(), 2));
+            break;
+        }
+        case 0xd1: // SET 2, C
+        {
+            mRegisters.setC(set(mRegisters.getC(), 2));
+            break;
+        }
+        case 0xd2: // SET 2, D
+        {
+            mRegisters.setD(set(mRegisters.getD(), 2));
+            break;
+        }
+        case 0xd3: // SET 2, E
+        {
+            mRegisters.setE(set(mRegisters.getE(), 2));
+            break;
+        }
+        case 0xd4: // SET 2, H
+        {
+            mRegisters.setH(set(mRegisters.getH(), 2));
+            break;
+        }
+        case 0xd5: // SET 2, L
+        {
+            mRegisters.setL(set(mRegisters.getL(), 2));
+            break;
+        }
+        case 0xd6: // SET 2, (HL)
+        {
+            bus.write(mRegisters.getHL(), set(bus.read(mRegisters.getHL()), 2));
+            break;
+        }
+        case 0xd7: // SET 2, A
+        {
+            mRegisters.setA(set(mRegisters.getA(), 2));
+            break;
+        }
+        case 0xd8: // SET 3, B
+        {
+            mRegisters.setB(set(mRegisters.getB(), 3));
+            break;
+        }
+        case 0xd9: // SET 3, C
+        {
+            mRegisters.setC(set(mRegisters.getC(), 3));
+            break;
+        }
+        case 0xda: // SET 3, D
+        {
+            mRegisters.setD(set(mRegisters.getD(), 3));
+            break;
+        }
+        case 0xdb: // SET 3, E
+        {
+            mRegisters.setE(set(mRegisters.getE(), 3));
+            break;
+        }
+        case 0xdc: // SET 3, H
+        {
+            mRegisters.setH(set(mRegisters.getH(), 3));
+            break;
+        }
+        case 0xdd: // SET 3, L
+        {
+            mRegisters.setL(set(mRegisters.getL(), 3));
+            break;
+        }
+        case 0xde: // SET 3, (HL)
+        {
+            bus.write(mRegisters.getHL(), set(bus.read(mRegisters.getHL()), 3));
+            break;
+        }
+        case 0xdf: // SET 3, A
+        {
+            mRegisters.setA(set(mRegisters.getA(), 3));
+            break;
+        }
+        case 0xe0: // SET 4, B
+        {
+            mRegisters.setB(set(mRegisters.getB(), 4));
+            break;
+        }
+        case 0xe1: // SET 4, C
+        {
+            mRegisters.setC(set(mRegisters.getC(), 4));
+            break;
+        }
+        case 0xe2: // SET 4, D
+        {
+            mRegisters.setD(set(mRegisters.getD(), 4));
+            break;
+        }
+        case 0xe3: // SET 4, E
+        {
+            mRegisters.setE(set(mRegisters.getE(), 4));
+            break;
+        }
+        case 0xe4: // SET 4, H
+        {
+            mRegisters.setH(set(mRegisters.getH(), 4));
+            break;
+        }
+        case 0xe5: // SET 4, L
+        {
+            mRegisters.setL(set(mRegisters.getL(), 4));
+            break;
+        }
+        case 0xe6: // SET 4, (HL)
+        {
+            bus.write(mRegisters.getHL(), set(bus.read(mRegisters.getHL()), 4));
+            break;
+        }
+        case 0xe7: // SET 4, A
+        {
+            mRegisters.setA(set(mRegisters.getA(), 4));
+            break;
+        }
+        case 0xe8: // SET 5, B
+        {
+            mRegisters.setB(set(mRegisters.getB(), 5));
+            break;
+        }
+        case 0xe9: // SET 5, C
+        {
+            mRegisters.setC(set(mRegisters.getC(), 5));
+            break;
+        }
+        case 0xea: // SET 5, D
+        {
+            mRegisters.setD(set(mRegisters.getD(), 5));
+            break;
+        }
+        case 0xeb: // SET 5, E
+        {
+            mRegisters.setE(set(mRegisters.getE(), 5));
+            break;
+        }
+        case 0xec: // SET 5, H
+        {
+            mRegisters.setH(set(mRegisters.getH(), 5));
+            break;
+        }
+        case 0xed: // SET 5, L
+        {
+            mRegisters.setL(set(mRegisters.getL(), 5));
+            break;
+        }
+        case 0xee: // SET 5, (HL)
+        {
+            bus.write(mRegisters.getHL(), set(bus.read(mRegisters.getHL()), 5));
+            break;
+        }
+        case 0xef: // SET 5, A
+        {
+            mRegisters.setA(set(mRegisters.getA(), 5));
+            break;
+        }
+        case 0xf0: // SET 6, B
+        {
+            mRegisters.setB(set(mRegisters.getB(), 6));
+            break;
+        }
+        case 0xf1: // SET 6, C
+        {
+            mRegisters.setC(set(mRegisters.getC(), 6));
+            break;
+        }
+        case 0xf2: // SET 6, D
+        {
+            mRegisters.setD(set(mRegisters.getD(), 6));
+            break;
+        }
+        case 0xf3: // SET 6, E
+        {
+            mRegisters.setE(set(mRegisters.getE(), 6));
+            break;
+        }
+        case 0xf4: // SET 6, H
+        {
+            mRegisters.setH(set(mRegisters.getH(), 6));
+            break;
+        }
+        case 0xf5: // SET 6, L
+        {
+            mRegisters.setL(set(mRegisters.getL(), 6));
+            break;
+        }
+        case 0xf6: // SET 6, (HL)
+        {
+            bus.write(mRegisters.getHL(), set(bus.read(mRegisters.getHL()), 6));
+            break;
+        }
+        case 0xf7: // SET 6, A
+        {
+            mRegisters.setA(set(mRegisters.getA(), 6));
+            break;
+        }
+        case 0xf8: // SET 7, B
+        {
+            mRegisters.setB(set(mRegisters.getB(), 7));
+            break;
+        }
+        case 0xf9: // SET 7, C
+        {
+            mRegisters.setC(set(mRegisters.getC(), 7));
+            break;
+        }
+        case 0xfa: // SET 7, D
+        {
+            mRegisters.setD(set(mRegisters.getD(), 7));
+            break;
+        }
+        case 0xfb: // SET 7, E
+        {
+            mRegisters.setE(set(mRegisters.getE(), 7));
+            break;
+        }
+        case 0xfc: // SET 7, H
+        {
+            mRegisters.setH(set(mRegisters.getH(), 7));
+            break;
+        }
+        case 0xfd: // SET 7, L
+        {
+            mRegisters.setL(set(mRegisters.getL(), 7));
+            break;
+        }
+        case 0xfe: // SET 7, (HL)
+        {
+            bus.write(mRegisters.getHL(), set(bus.read(mRegisters.getHL()), 7));
+            break;
+        }
+        case 0xff: // SET 7, A
+        {
+            mRegisters.setA(set(mRegisters.getA(), 7));
+            break;
+        }
         }
         break;
     }
@@ -2686,5 +3006,10 @@ void CPU::bit(uint8_t reg, uint8_t bitIndex)
 uint8_t CPU::res(uint8_t reg, uint8_t bitIndex)
 {
     return reg & ~(1 << bitIndex);
+}
+
+uint8_t CPU::set(uint8_t reg, uint8_t bitIndex)
+{
+    return reg | (1 << bitIndex);
 }
 } // namespace qgb
