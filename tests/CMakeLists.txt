@@ -1,12 +1,10 @@
-add_executable(RegistersTest RegistersTest.cpp)
-add_executable(UtilsTest UtilsTest.cpp)
-
-target_link_libraries(RegistersTest PRIVATE core GTest::gtest_main)
-target_link_libraries(UtilsTest PRIVATE core GTest::gtest_main)
-
-target_include_directories(RegistersTest PUBLIC ${PROJECT_SOURCE_DIR})
-target_include_directories(UtilsTest PUBLIC ${PROJECT_SOURCE_DIR})
+set(TEST_TARGETS RegistersTest UtilsTest CPUInstructionsTest)
 
 include(GoogleTest)
-gtest_discover_tests(RegistersTest)
-gtest_discover_tests(UtilsTest)
+
+foreach(test ${TEST_TARGETS})
+    add_executable(${test} ${test}.cpp)
+    target_link_libraries(${test} PRIVATE core GTest::gtest_main)
+    target_include_directories(${test} PUBLIC ${PROJECT_SOURCE_DIR})
+    gtest_discover_tests(${test})
+endforeach()

@@ -1206,6 +1206,12 @@ void CPU::step(Bus &bus)
         mRegisters.setPC(pop16(bus));
         break;
     }
+    case 0xd9: // RETI
+    {
+        mRegisters.setPC(pop16(bus));
+        mIME = true;
+        break;
+    }
     case 0xc1: // POP BC
     {
         mRegisters.setBC(pop16(bus));
@@ -1266,6 +1272,11 @@ void CPU::step(Bus &bus)
     {
         uint16_t a16 = fetchWord(bus);
         mRegisters.setPC(a16);
+        break;
+    }
+    case 0xe9: // JP HL
+    {
+        mRegisters.setPC(mRegisters.getHL());
         break;
     }
     case 0xc5: // PUSH BC
@@ -2721,7 +2732,7 @@ uint16_t CPU::fetchWord(Bus &bus)
 {
     uint8_t low = fetchByte(bus);
     uint8_t high = fetchByte(bus);
-    return makeWord(low, high);
+    return makeWord(high, low);
 }
 
 uint8_t CPU::increment(uint8_t r8)

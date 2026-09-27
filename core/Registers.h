@@ -61,7 +61,7 @@ private:
     uint8_t mF = 0;
     uint8_t mH = 0;
     uint8_t mL = 0;
-    uint16_t mPC = 0;
+    uint16_t mPC = 0x0100;
     uint16_t mSP = 0;
 };
 } // namespace qgb
