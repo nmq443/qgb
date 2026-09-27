@@ -11,7 +11,7 @@ class Cartridge
 public:
     Cartridge() = default;
     void load(const std::filesystem::path &path);
-    uint8_t read(uint16_t address) const;
+    [[nodiscard]] uint8_t read(uint16_t address) const;
     void write(uint16_t address, uint8_t value);
 
 private:

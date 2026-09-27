@@ -17,21 +17,21 @@ class Registers
 public:
     Registers() = default;
 
-    uint16_t getAF() const;
-    uint16_t getBC() const;
-    uint16_t getDE() const;
-    uint16_t getHL() const;
-    uint16_t getSP() const;
-    uint16_t getPC() const;
+    [[nodiscard]] uint16_t getAF() const;
+    [[nodiscard]] uint16_t getBC() const;
+    [[nodiscard]] uint16_t getDE() const;
+    [[nodiscard]] uint16_t getHL() const;
+    [[nodiscard]] uint16_t getSP() const;
+    [[nodiscard]] uint16_t getPC() const;
 
-    uint8_t getA() const;
-    uint8_t getB() const;
-    uint8_t getC() const;
-    uint8_t getD() const;
-    uint8_t getE() const;
-    uint8_t getF() const;
-    uint8_t getH() const;
-    uint8_t getL() const;
+    [[nodiscard]] uint8_t getA() const;
+    [[nodiscard]] uint8_t getB() const;
+    [[nodiscard]] uint8_t getC() const;
+    [[nodiscard]] uint8_t getD() const;
+    [[nodiscard]] uint8_t getE() const;
+    [[nodiscard]] uint8_t getF() const;
+    [[nodiscard]] uint8_t getH() const;
+    [[nodiscard]] uint8_t getL() const;
 
     void setA(uint8_t a);
     void setB(uint8_t b);
@@ -49,7 +49,7 @@ public:
     void setHL(uint16_t hl);
     void setSP(uint16_t sp);
 
-    bool getFlag(Flag flag) const;
+    [[nodiscard]] bool getFlag(Flag flag) const;
     void setFlag(Flag flag, bool on);
 
 private:
