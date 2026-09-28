@@ -7,7 +7,7 @@ using namespace qgb;
 
 const std::vector<std::filesystem::path> kROMPaths = {
     "../roms/cpu_instrs/individual/01-special.gb",
-    //"../roms/cpu_instrs/individual/02-interrupts.gb",
+    "../roms/cpu_instrs/individual/02-interrupts.gb",
      "../roms/cpu_instrs/individual/03-op sp,hl.gb",
      "../roms/cpu_instrs/individual/04-op r,imm.gb",
      "../roms/cpu_instrs/individual/05-op rp.gb",
@@ -16,9 +16,7 @@ const std::vector<std::filesystem::path> kROMPaths = {
      "../roms/cpu_instrs/individual/08-misc instrs.gb",
      "../roms/cpu_instrs/individual/09-op r,r.gb",
      "../roms/cpu_instrs/individual/10-bit ops.gb",
-     "../roms/cpu_instrs/individual/11-op a,(hl).gb",
-     //"../roms/instr_timing/instr_timing.gb",
-    // "../roms/mem_timing/mem_timing.gb"
+     "../roms/cpu_instrs/individual/11-op a,(hl).gb"
 };
 
 static std::string runRomUntilResult(const std::filesystem::path &romPath)

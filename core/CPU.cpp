@@ -7,6 +7,12 @@ namespace qgb
 {
 void CPU::step(Bus &bus)
 {
+    int interruptCycles = handleInterrupt(bus);
+    if (interruptCycles > 0)
+    {
+        return;
+    }
+
     uint8_t opcode = fetchByte(bus);
     switch (opcode)
     {
@@ -3022,5 +3028,36 @@ uint8_t CPU::res(uint8_t reg, uint8_t bitIndex)
 uint8_t CPU::set(uint8_t reg, uint8_t bitIndex)
 {
     return reg | (1 << bitIndex);
+}
+int CPU::handleInterrupt(Bus &bus)
+{
+    if (!mIME)
+    {
+        return 0;
+    }
+
+    uint8_t ieReg = bus.read(0xffff);
+    uint8_t ifReg = bus.read(0xff0f);
+    uint8_t pending = ieReg & ifReg & 0x1f;
+
+    if (0 == pending)
+    {
+        return 0;
+    }
+
+    for (auto bit = static_cast<uint8_t>(Interrupt::VBlank); bit <= static_cast<uint8_t>(Interrupt::Joypad); ++bit)
+    {
+        if (pending & (1 << bit))
+        {
+            mIME = false; // disable further interrupts during handling
+            bus.write(0xff0f, ifReg & ~(1 << bit)); // clear the serviced bit
+            push16(bus, mRegisters.getPC());
+            static constexpr uint16_t kVectors[5] = {0x0040, 0x0048, 0x0050, 0x0058, 0x0060};
+            mRegisters.setPC(kVectors[bit]);
+            return 20; // servicing an interrupt takes 5 M-cycles = 20 T-cycles
+        }
+    }
+
+    return 0;
 }
 } // namespace qgb

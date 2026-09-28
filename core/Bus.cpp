@@ -31,6 +31,10 @@ uint8_t Bus::read(uint16_t address) const
     }
     else if (0xff00 <= address && address <= 0xff7f) // i/o registers
     {
+        if (0xff0f == address)
+        {
+            return mIF;
+        }
         return mIoRegs[address - 0xff00];
     }
     else if (0xff80 <= address && address <= 0xfffe) // hram
@@ -39,6 +43,7 @@ uint8_t Bus::read(uint16_t address) const
     }
     else if (0xffff == address) // interrupt enable register
     {
+        return mIE;
     }
     return 0;
 }
@@ -71,7 +76,14 @@ void Bus::write(uint16_t address, uint8_t value)
     }
     else if (0xff00 <= address && address <= 0xff7f) // i/o registers
     {
-        mIoRegs[address - 0xff00] = value;
+        if (0xff0f == address) // interrupt flag
+        {
+            mIF = value;
+        }
+        else
+        {
+            mIoRegs[address - 0xff00] = value;
+        }
     }
     else if (0xff80 <= address && address <= 0xfffe) // hram
     {
@@ -79,6 +91,7 @@ void Bus::write(uint16_t address, uint8_t value)
     }
     else if (0xffff == address) // interrupt enable register
     {
+        mIE = value;
     }
 }
 
