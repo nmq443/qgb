@@ -8,12 +8,15 @@ namespace qgb
 class Emulator
 {
 public:
-    Emulator() = default;
+    Emulator();
     void run();
 
 private:
     CPU mCPU;
+    Timer mTimer;
+    Cartridge mCartridge;
     Bus mBus;
+
     bool mRunning = true;
 };
 } // namespace qgb

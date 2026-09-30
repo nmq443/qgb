@@ -2,20 +2,23 @@
 
 namespace qgb
 {
-Bus::Bus()
+void Bus::init(Cartridge& cartridge, Timer& timer)
 {
+    mCartridgePtr = &cartridge;
+    mTimerPtr = &timer;
+
     auto timerInterrupt = [this]()
     {
         raiseInterrupt(Interrupt::Timer);
     };
-    mTimer.setTimerInterrupt(timerInterrupt);
+    mTimerPtr->setTimerInterrupt(timerInterrupt);
 }
 
 uint8_t Bus::read(uint16_t address) const
 {
     if ((address <= 0x7fff) or (0xa000 <= address && address <= 0xbfff)) // rom bank
     {
-        return mCartridge.read(address);
+        return mCartridgePtr->read(address);
     }
     else if (0x8000 <= address && address <= 0x9fff) // video ram
     {
@@ -46,7 +49,7 @@ uint8_t Bus::read(uint16_t address) const
         }
         else if (0xff04 <= address && address <= 0xff07)
         {
-            return mTimer.read(address);
+            return mTimerPtr->read(address);
         }
         return mIoRegs[address - 0xff00];
     }
@@ -65,7 +68,7 @@ void Bus::write(uint16_t address, uint8_t value)
 {
     if ((address <= 0x7fff) or (0xa000 <= address && address <= 0xbfff)) // rom bank or external ram
     {
-        mCartridge.write(address, value);
+        mCartridgePtr->write(address, value);
     }
     else if (0x8000 <= address && address <= 0x9fff) // video ram
     {
@@ -95,7 +98,7 @@ void Bus::write(uint16_t address, uint8_t value)
         }
         else if (0xff04 <= address && address <= 0xff07)
         {
-            mTimer.write(address, value);
+            mTimerPtr->write(address, value);
         }
         else
         {
@@ -110,16 +113,6 @@ void Bus::write(uint16_t address, uint8_t value)
     {
         mIE = value;
     }
-}
-
-void Bus::loadCartridge(const std::filesystem::path &romPath)
-{
-    mCartridge.load(romPath);
-}
-
-void Bus::tick(int tCycles)
-{
-    mTimer.tick(tCycles);
 }
 
 void Bus::raiseInterrupt(Interrupt interrupt)

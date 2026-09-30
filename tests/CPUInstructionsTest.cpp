@@ -21,9 +21,12 @@ const std::vector<std::filesystem::path> kROMPaths = {
 
 static std::string runRomUntilResult(const std::filesystem::path &romPath)
 {
+    Cartridge cartridge;
+    EXPECT_NO_THROW(cartridge.load(romPath));
+    Timer timer;
     Bus bus;
+    bus.init(cartridge, timer);
     CPU cpu;
-    EXPECT_NO_THROW(bus.loadCartridge(romPath));
 
     std::string output;
     constexpr int maxSteps = 10'000'000;
@@ -31,7 +34,7 @@ static std::string runRomUntilResult(const std::filesystem::path &romPath)
     for (int i = 0; i < maxSteps; ++i)
     {
         int tCycles = cpu.step(bus);
-        bus.tick(tCycles);
+        timer.tick(tCycles);
 
         if (bus.read(0xff02) == 0x81)
         {
