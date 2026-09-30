@@ -1,12 +1,13 @@
 #pragma once
 
 #include "Cartridge.h"
+#include "Timer.h"
 #include <cstdint>
 #include <array>
 
 namespace qgb
 {
-enum Interrupt
+enum class Interrupt
 {
     VBlank,
     Lcd,
@@ -18,13 +19,18 @@ enum Interrupt
 class Bus
 {
 public:
-    Bus() = default;
+    Bus();
     void loadCartridge(const std::filesystem::path &romPath);
     [[nodiscard]] uint8_t read(uint16_t address) const;
     void write(uint16_t address, uint8_t value);
+    void tick(int tCycles);
+
+private:
+    void raiseInterrupt(Interrupt);
 
 private:
     Cartridge mCartridge;
+    Timer mTimer;
     std::array<uint8_t, 0x2000> mVram = {};
     std::array<uint8_t, 0x2000> mWram = {};
     std::array<uint8_t, 0x7f> mHram = {};

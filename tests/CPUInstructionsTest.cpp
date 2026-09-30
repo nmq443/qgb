@@ -30,7 +30,8 @@ static std::string runRomUntilResult(const std::filesystem::path &romPath)
 
     for (int i = 0; i < maxSteps; ++i)
     {
-        cpu.step(bus);
+        int tCycles = cpu.step(bus);
+        bus.tick(tCycles);
 
         if (bus.read(0xff02) == 0x81)
         {

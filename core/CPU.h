@@ -10,7 +10,7 @@ class CPU
 {
 public:
     CPU() = default;
-    void step(Bus &bus);
+    int step(Bus &bus);
 
 private:
     uint8_t fetchByte(Bus &bus);

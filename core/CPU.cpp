@@ -5,14 +5,65 @@
 
 namespace qgb
 {
-void CPU::step(Bus &bus)
+/**
+ * @brief Base (not-taken) t-cycle counts per unprefixed opcode.
+ * For conditional JR/JP/CALL/RET, this is the SHORTER (branch-not-taken) value;
+ * add extraCycles in CPU::step() when the branch IS taken.
+ * Note: 1 m-cycle = 4 t-cycles
+ */
+constexpr std::array<uint8_t, 256> kCycleTable = {
+    4,  12,   8,   8,   4,   4,   8,   4,  20,   8,   8,   8,   4,   4,   8,   4,
+    4,  12,   8,   8,   4,   4,   8,   4,  12,   8,   8,   8,   4,   4,   8,   4,
+   12,  12,   8,   8,   4,   4,   8,   4,  12,   8,   8,   8,   4,   4,   8,   4,
+   12,  12,   8,   8,  12,  12,  12,   4,  12,   8,   8,   8,   4,   4,   8,   4,
+    4,   4,   4,   4,   4,   4,   8,   4,   4,   4,   4,   4,   4,   4,   8,   4,
+    4,   4,   4,   4,   4,   4,   8,   4,   4,   4,   4,   4,   4,   4,   8,   4,
+    4,   4,   4,   4,   4,   4,   8,   4,   4,   4,   4,   4,   4,   4,   8,   4,
+    8,   8,   8,   8,   8,   8,   4,   8,   4,   4,   4,   4,   4,   4,   8,   4,
+    4,   4,   4,   4,   4,   4,   8,   4,   4,   4,   4,   4,   4,   4,   8,   4,
+    4,   4,   4,   4,   4,   4,   8,   4,   4,   4,   4,   4,   4,   4,   8,   4,
+    4,   4,   4,   4,   4,   4,   8,   4,   4,   4,   4,   4,   4,   4,   8,   4,
+    4,   4,   4,   4,   4,   4,   8,   4,   4,   4,   4,   4,   4,   4,   8,   4,
+   20,  12,  16,  16,  24,  16,   8,  16,  20,  16,  16,   4,  24,  24,   8,  16,
+   20,  12,  16,   4,  24,  16,   8,  16,  20,  16,  16,   4,  24,   4,   8,  16,
+   12,  12,   8,   4,   4,  16,   8,  16,  16,   4,  16,   4,   4,   4,   8,  16,
+   12,  12,   8,   4,   4,  16,   8,  16,  12,   8,  16,   4,   4,   4,   8,  16,
+};
+
+/**
+ * @brief CB-prefixed opcode t-cycle counts (all fixed, no conditional variants).
+ */
+constexpr std::array<uint8_t, 256> kCBCycleTable = {
+    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
+    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
+    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
+    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
+    8,   8,   8,   8,   8,   8,  12,   8,   8,   8,   8,   8,   8,   8,  12,   8,
+    8,   8,   8,   8,   8,   8,  12,   8,   8,   8,   8,   8,   8,   8,  12,   8,
+    8,   8,   8,   8,   8,   8,  12,   8,   8,   8,   8,   8,   8,   8,  12,   8,
+    8,   8,   8,   8,   8,   8,  12,   8,   8,   8,   8,   8,   8,   8,  12,   8,
+    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
+    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
+    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
+    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
+    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
+    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
+    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
+    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
+};
+
+
+int CPU::step(Bus &bus)
 {
     int interruptCycles = handleInterrupt(bus);
     if (interruptCycles > 0)
     {
-        return;
+        return interruptCycles;
     }
 
+    if (mHalted) return kCycleTable[0x76];
+
+    int extraCycles = 0;
     uint8_t opcode = fetchByte(bus);
     switch (opcode)
     {
@@ -1426,6 +1477,7 @@ void CPU::step(Bus &bus)
     case 0xcb: // 16-bit opcodes
     {
         uint8_t secondByte = fetchByte(bus);
+        extraCycles += kCBCycleTable[secondByte];
         switch (secondByte)
         {
         case 0x00: // RLC B
@@ -2708,6 +2760,8 @@ void CPU::step(Bus &bus)
             mRegisters.setA(set(mRegisters.getA(), 7));
             break;
         }
+        default:
+            throw std::runtime_error(std::format("Opcode prefix CB {} is not supported!", opcode));
         }
         break;
     }
@@ -2725,6 +2779,8 @@ void CPU::step(Bus &bus)
         mIMEEnableScheduled = true;
         mIMEEnablePending = false;
     }
+
+    return kCycleTable[opcode] + extraCycles;
 }
 
 uint8_t CPU::fetchByte(Bus &bus)
@@ -3029,15 +3085,21 @@ uint8_t CPU::set(uint8_t reg, uint8_t bitIndex)
 {
     return reg | (1 << bitIndex);
 }
+
 int CPU::handleInterrupt(Bus &bus)
 {
+    uint8_t ieReg = bus.read(0xffff);
+    uint8_t ifReg = bus.read(0xff0f);
+    if ((ieReg & ifReg & 0x1f) > 0 && mHalted)
+    {
+        mHalted = false;
+    }
+
     if (!mIME)
     {
         return 0;
     }
 
-    uint8_t ieReg = bus.read(0xffff);
-    uint8_t ifReg = bus.read(0xff0f);
     uint8_t pending = ieReg & ifReg & 0x1f;
 
     if (0 == pending)

@@ -4,4 +4,5 @@ add_library(core STATIC
     CPU.cpp 
     Emulator.cpp 
     Registers.cpp 
-    Utils.cpp)
+    Utils.cpp
+    Timer.cpp)

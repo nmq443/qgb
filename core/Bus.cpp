@@ -2,6 +2,15 @@
 
 namespace qgb
 {
+Bus::Bus()
+{
+    auto timerInterrupt = [this]()
+    {
+        raiseInterrupt(Interrupt::Timer);
+    };
+    mTimer.setTimerInterrupt(timerInterrupt);
+}
+
 uint8_t Bus::read(uint16_t address) const
 {
     if ((address <= 0x7fff) or (0xa000 <= address && address <= 0xbfff)) // rom bank
@@ -34,6 +43,10 @@ uint8_t Bus::read(uint16_t address) const
         if (0xff0f == address)
         {
             return mIF;
+        }
+        else if (0xff04 <= address && address <= 0xff07)
+        {
+            return mTimer.read(address);
         }
         return mIoRegs[address - 0xff00];
     }
@@ -80,6 +93,10 @@ void Bus::write(uint16_t address, uint8_t value)
         {
             mIF = value;
         }
+        else if (0xff04 <= address && address <= 0xff07)
+        {
+            mTimer.write(address, value);
+        }
         else
         {
             mIoRegs[address - 0xff00] = value;
@@ -98,5 +115,15 @@ void Bus::write(uint16_t address, uint8_t value)
 void Bus::loadCartridge(const std::filesystem::path &romPath)
 {
     mCartridge.load(romPath);
+}
+
+void Bus::tick(int tCycles)
+{
+    mTimer.tick(tCycles);
+}
+
+void Bus::raiseInterrupt(Interrupt interrupt)
+{
+    mIF |= (1 << static_cast<int>(interrupt));
 }
 } // namespace qgb
