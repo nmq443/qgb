@@ -21,7 +21,7 @@ TEST_F(RegistersTest, InitialStateIsZero)
     EXPECT_EQ(regs.getH(), 0);
     EXPECT_EQ(regs.getL(), 0);
 
-    EXPECT_EQ(regs.getPC(), 0);
+    EXPECT_EQ(regs.getPC(), 0x0100); // initial value of PC is 0x0100
     EXPECT_EQ(regs.getSP(), 0);
 
     EXPECT_EQ(regs.getAF(), 0);
