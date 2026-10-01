@@ -9,6 +9,7 @@ class Emulator
 {
 public:
     Emulator();
+    void load(const std::filesystem::path &romPath);
     void run();
 
 private:

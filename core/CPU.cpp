@@ -1,8 +1,8 @@
 #include "CPU.h"
 #include "Utils.h"
 #include <cstdint>
-#include <stdexcept>
 #include <format>
+#include <stdexcept>
 
 namespace qgb
 {
@@ -13,46 +13,48 @@ namespace qgb
  * Note: 1 m-cycle = 4 t-cycles
  */
 constexpr std::array<uint8_t, 256> kCycleTable = {
-    4,  12,   8,   8,   4,   4,   8,   4,  20,   8,   8,   8,   4,   4,   8,   4,
-    4,  12,   8,   8,   4,   4,   8,   4,  12,   8,   8,   8,   4,   4,   8,   4,
-   12,  12,   8,   8,   4,   4,   8,   4,  12,   8,   8,   8,   4,   4,   8,   4,
-   12,  12,   8,   8,  12,  12,  12,   4,  12,   8,   8,   8,   4,   4,   8,   4,
-    4,   4,   4,   4,   4,   4,   8,   4,   4,   4,   4,   4,   4,   4,   8,   4,
-    4,   4,   4,   4,   4,   4,   8,   4,   4,   4,   4,   4,   4,   4,   8,   4,
-    4,   4,   4,   4,   4,   4,   8,   4,   4,   4,   4,   4,   4,   4,   8,   4,
-    8,   8,   8,   8,   8,   8,   4,   8,   4,   4,   4,   4,   4,   4,   8,   4,
-    4,   4,   4,   4,   4,   4,   8,   4,   4,   4,   4,   4,   4,   4,   8,   4,
-    4,   4,   4,   4,   4,   4,   8,   4,   4,   4,   4,   4,   4,   4,   8,   4,
-    4,   4,   4,   4,   4,   4,   8,   4,   4,   4,   4,   4,   4,   4,   8,   4,
-    4,   4,   4,   4,   4,   4,   8,   4,   4,   4,   4,   4,   4,   4,   8,   4,
-   20,  12,  16,  16,  24,  16,   8,  16,  20,  16,  16,   4,  24,  24,   8,  16,
-   20,  12,  16,   4,  24,  16,   8,  16,  20,  16,  16,   4,  24,   4,   8,  16,
-   12,  12,   8,   4,   4,  16,   8,  16,  16,   4,  16,   4,   4,   4,   8,  16,
-   12,  12,   8,   4,   4,  16,   8,  16,  12,   8,  16,   4,   4,   4,   8,  16,
-};
+    1, 3, 2, 2, 1, 1, 2, 1, 5, 2, 2, 2, 1, 1, 2, 1,
+    0, 3, 2, 2, 1, 1, 2, 1, 3, 2, 2, 2, 1, 1, 2, 1,
+    2, 3, 2, 2, 1, 1, 2, 1, 2, 2, 2, 2, 1, 1, 2, 1,
+    2, 3, 2, 2, 3, 3, 3, 1, 2, 2, 2, 2, 1, 1, 2, 1,
+    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+    2, 2, 2, 2, 2, 2, 0, 2, 1, 1, 1, 1, 1, 1, 2, 1,
+    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+    2, 3, 3, 4, 3, 4, 2, 4, 2, 4, 3, 0, 3, 6, 2, 4,
+    2, 3, 3, 0, 3, 4, 2, 4, 2, 4, 3, 0, 3, 0, 2, 4,
+    3, 3, 2, 0, 0, 4, 2, 4, 4, 1, 4, 0, 0, 0, 2, 4,
+    3, 3, 2, 1, 0, 4, 2, 4, 3, 2, 4, 1, 0, 0, 2, 4};
 
 /**
- * @brief CB-prefixed opcode t-cycle counts (all fixed, no conditional variants).
+ * @brief CB-prefixed opcode t-cycle counts.
  */
 constexpr std::array<uint8_t, 256> kCBCycleTable = {
-    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
-    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
-    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
-    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
-    8,   8,   8,   8,   8,   8,  12,   8,   8,   8,   8,   8,   8,   8,  12,   8,
-    8,   8,   8,   8,   8,   8,  12,   8,   8,   8,   8,   8,   8,   8,  12,   8,
-    8,   8,   8,   8,   8,   8,  12,   8,   8,   8,   8,   8,   8,   8,  12,   8,
-    8,   8,   8,   8,   8,   8,  12,   8,   8,   8,   8,   8,   8,   8,  12,   8,
-    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
-    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
-    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
-    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
-    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
-    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
-    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
-    8,   8,   8,   8,   8,   8,  16,   8,   8,   8,   8,   8,   8,   8,  16,   8,
-};
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+    2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
+    2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
+    2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
+    2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2};
 
+constexpr uint8_t kRetTakenExtra = 3;
+constexpr uint8_t kJpTakenExtra = 1;
+constexpr uint8_t kCallTakenExtra = 3;
+constexpr uint8_t kJrTakenExtra = 1;
 
 int CPU::step(Bus &bus)
 {
@@ -62,7 +64,8 @@ int CPU::step(Bus &bus)
         return interruptCycles;
     }
 
-    if (mHalted) return kCycleTable[0x76];
+    if (mHalted)
+        return kCycleTable[0x76];
 
     int extraCycles = 0;
     uint8_t opcode = fetchByte(bus);
@@ -679,6 +682,7 @@ int CPU::step(Bus &bus)
         if (!mRegisters.getFlag(Flag::Zero))
         {
             mRegisters.setPC(mRegisters.getPC() + s8);
+            extraCycles = kJrTakenExtra;
         }
         break;
     }
@@ -688,6 +692,7 @@ int CPU::step(Bus &bus)
         if (!mRegisters.getFlag(Flag::Carry))
         {
             mRegisters.setPC(mRegisters.getPC() + s8);
+            extraCycles = kJrTakenExtra;
         }
         break;
     }
@@ -703,6 +708,7 @@ int CPU::step(Bus &bus)
         if (mRegisters.getFlag(Flag::Zero))
         {
             mRegisters.setPC(mRegisters.getPC() + s8);
+            extraCycles = kJrTakenExtra;
         }
         break;
     }
@@ -712,6 +718,7 @@ int CPU::step(Bus &bus)
         if (mRegisters.getFlag(Flag::Carry))
         {
             mRegisters.setPC(mRegisters.getPC() + s8);
+            extraCycles = kJrTakenExtra;
         }
         break;
     }
@@ -1232,6 +1239,7 @@ int CPU::step(Bus &bus)
         if (!mRegisters.getFlag(Flag::Zero))
         {
             mRegisters.setPC(pop16(bus));
+            extraCycles = kRetTakenExtra;
         }
         break;
     }
@@ -1240,6 +1248,7 @@ int CPU::step(Bus &bus)
         if (!mRegisters.getFlag(Flag::Carry))
         {
             mRegisters.setPC(pop16(bus));
+            extraCycles = kRetTakenExtra;
         }
         break;
     }
@@ -1248,6 +1257,7 @@ int CPU::step(Bus &bus)
         if (mRegisters.getFlag(Flag::Zero))
         {
             mRegisters.setPC(pop16(bus));
+            extraCycles = kRetTakenExtra;
         }
         break;
     }
@@ -1256,6 +1266,7 @@ int CPU::step(Bus &bus)
         if (mRegisters.getFlag(Flag::Carry))
         {
             mRegisters.setPC(pop16(bus));
+            extraCycles = kRetTakenExtra;
         }
         break;
     }
@@ -1296,6 +1307,7 @@ int CPU::step(Bus &bus)
         if (!mRegisters.getFlag(Flag::Zero))
         {
             mRegisters.setPC(a16);
+            extraCycles = kJpTakenExtra;
         }
         break;
     }
@@ -1305,6 +1317,7 @@ int CPU::step(Bus &bus)
         if (!mRegisters.getFlag(Flag::Carry))
         {
             mRegisters.setPC(a16);
+            extraCycles = kJpTakenExtra;
         }
         break;
     }
@@ -1314,6 +1327,7 @@ int CPU::step(Bus &bus)
         if (mRegisters.getFlag(Flag::Zero))
         {
             mRegisters.setPC(a16);
+            extraCycles = kJpTakenExtra;
         }
         break;
     }
@@ -1323,6 +1337,7 @@ int CPU::step(Bus &bus)
         if (mRegisters.getFlag(Flag::Carry))
         {
             mRegisters.setPC(a16);
+            extraCycles = kJpTakenExtra;
         }
         break;
     }
@@ -1364,6 +1379,7 @@ int CPU::step(Bus &bus)
         {
             push16(bus, mRegisters.getPC());
             mRegisters.setPC(a16);
+            extraCycles = kCallTakenExtra;
         }
         break;
     }
@@ -1374,6 +1390,7 @@ int CPU::step(Bus &bus)
         {
             push16(bus, mRegisters.getPC());
             mRegisters.setPC(a16);
+            extraCycles = kCallTakenExtra;
         }
         break;
     }
@@ -1384,6 +1401,7 @@ int CPU::step(Bus &bus)
         {
             push16(bus, mRegisters.getPC());
             mRegisters.setPC(a16);
+            extraCycles = kCallTakenExtra;
         }
         break;
     }
@@ -1394,6 +1412,7 @@ int CPU::step(Bus &bus)
         {
             push16(bus, mRegisters.getPC());
             mRegisters.setPC(a16);
+            extraCycles = kCallTakenExtra;
         }
         break;
     }
@@ -1478,7 +1497,7 @@ int CPU::step(Bus &bus)
     case 0xcb: // 16-bit opcodes
     {
         uint8_t secondByte = fetchByte(bus);
-        extraCycles += kCBCycleTable[secondByte];
+        extraCycles = kCBCycleTable[secondByte];
         switch (secondByte)
         {
         case 0x00: // RLC B
@@ -3112,12 +3131,12 @@ int CPU::handleInterrupt(Bus &bus)
     {
         if (pending & (1 << bit))
         {
-            mIME = false; // disable further interrupts during handling
+            mIME = false;                           // disable further interrupts during handling
             bus.write(0xff0f, ifReg & ~(1 << bit)); // clear the serviced bit
             push16(bus, mRegisters.getPC());
             static constexpr uint16_t kVectors[5] = {0x0040, 0x0048, 0x0050, 0x0058, 0x0060};
             mRegisters.setPC(kVectors[bit]);
-            return 20; // servicing an interrupt takes 5 M-cycles = 20 T-cycles
+            return 5; // servicing an interrupt takes 5 M-cycles
         }
     }
 
