@@ -65,6 +65,7 @@ void Timer::tick(int tCycles)
             if (mTima == 0xff)
             {
                 mTima = mTma;
+                mInterruptRequested = true;
                 mTimerInterrupt();
             }
             else
@@ -79,5 +80,10 @@ void Timer::tick(int tCycles)
 void Timer::setTimerInterrupt(const std::function<void()>& timerInterrupt)
 {
     mTimerInterrupt = timerInterrupt;
+}
+
+bool Timer::interruptRequested() const
+{
+    return mInterruptRequested;
 }
 } // namespace qgb
