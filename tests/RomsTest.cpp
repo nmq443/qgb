@@ -58,17 +58,30 @@ static std::string runRomUntilResult(const std::filesystem::path &romPath)
     return output;
 }
 
-TEST(RomTest, Individuals)
+class RomTest : public ::testing::TestWithParam<std::filesystem::path>
 {
-    for (const auto &romPath : kROMPaths)
-    {
-        std::string output = runRomUntilResult(romPath);
+};
 
-        bool passed = output.contains("Passed");
+TEST_P(RomTest, Passes)
+{
+    const auto &romPath = GetParam();
+    std::string output = runRomUntilResult(romPath);
 
-        EXPECT_TRUE(passed)
-            << "ROM: " << romPath << "\nOutput:\n" << output;
-
-        std::cout << "Test " << romPath << (passed ? " passed" : " failed") << '\n';
-    }
+    EXPECT_TRUE(output.contains("Passed"))
+        << "ROM: " << romPath << "\nOutput:\n"
+        << output;
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    CpuInstrs,
+    RomTest,
+    ::testing::ValuesIn(kROMPaths),
+    [](const ::testing::TestParamInfo<std::filesystem::path> &info)
+    {
+        // gtest names may only contain [A-Za-z0-9_]
+        std::string name = info.param.stem().string();
+        for (char &c : name)
+            if (!std::isalnum(static_cast<unsigned char>(c)))
+                c = '_';
+        return name;
+    });
