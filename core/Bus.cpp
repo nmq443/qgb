@@ -119,4 +119,10 @@ void Bus::raiseInterrupt(Interrupt interrupt)
 {
     mIF |= (1 << static_cast<int>(interrupt));
 }
+
+Bus::~Bus()
+{
+    mTimerPtr = nullptr;
+    mCartridgePtr = nullptr;
+}
 } // namespace qgb

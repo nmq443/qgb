@@ -23,6 +23,7 @@ public:
     void init(Cartridge &cartridge, Timer &timer);
     [[nodiscard]] uint8_t read(uint16_t address) const;
     void write(uint16_t address, uint8_t value);
+    ~Bus();
 
 private:
     void raiseInterrupt(Interrupt);
