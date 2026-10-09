@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Bus.h"
+#include "Clock.h"
 #include "Registers.h"
 #include <cstdint>
 
@@ -10,11 +11,13 @@ class CPU
 {
 public:
     CPU() = default;
-    int step(Bus &bus);
+    int step();
+    void init(Bus &bus, Clock &clock);
+    ~CPU();
 
 private:
-    uint8_t fetchByte(Bus &bus);
-    uint16_t fetchWord(Bus &bus);
+    uint8_t fetch8();
+    uint16_t fetch16();
     uint8_t increment(uint8_t r8);
     uint8_t decrement(uint8_t r8);
     uint16_t add(uint16_t first, uint16_t second);
@@ -26,8 +29,8 @@ private:
     uint8_t opXor(uint8_t first, uint8_t second);
     uint8_t opOr(uint8_t first, uint8_t second);
     void cp(uint8_t first, uint8_t second);
-    uint16_t pop16(Bus &bus);
-    void push16(Bus &bus, uint16_t value);
+    uint16_t pop16();
+    void push16(uint16_t value);
     uint8_t rlc(uint8_t reg);
     uint8_t rl(uint8_t reg);
     uint8_t rrc(uint8_t reg);
@@ -39,9 +42,15 @@ private:
     void bit(uint8_t reg, uint8_t bitIndex);
     uint8_t res(uint8_t reg, uint8_t bitIndex);
     uint8_t set(uint8_t reg, uint8_t bitIndex);
-    int handleInterrupt(Bus &bus);
+    int handleInterrupt();
 
-private:
+    // CPU primitives
+    uint8_t read(uint16_t address) const;
+    void write(uint16_t address, uint8_t value);
+    void idle();
+
+    Clock *mClockPtr; // non owning
+    Bus *mBusPtr;     // non owning
     Registers mRegisters;
     bool mIsStopped = false;
     bool mHalted = false;

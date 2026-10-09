@@ -17,7 +17,7 @@ void Emulator::run()
 {
     while (mRunning)
     {
-        int mCycles = mCPU.step(mBus);
+        int mCycles = mCPU.step();
         mTimer.tick(mCycles * 4);
 
         if (mBus.read(0xff02) == 0x81)
