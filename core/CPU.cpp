@@ -1,61 +1,12 @@
 #include "CPU.h"
 #include "Utils.h"
+#include <bit>
 #include <cstdint>
 #include <format>
 #include <stdexcept>
 
 namespace qgb
 {
-/**
- * @brief Base (not-taken) t-cycle counts per unprefixed opcode.
- * For conditional JR/JP/CALL/RET, this is the SHORTER (branch-not-taken) value;
- * add extraCycles in CPU::step() when the branch IS taken.
- * Note: 1 m-cycle = 4 t-cycles
- */
-constexpr std::array<uint8_t, 256> kCycleTable = {
-    1, 3, 2, 2, 1, 1, 2, 1, 5, 2, 2, 2, 1, 1, 2, 1,
-    0, 3, 2, 2, 1, 1, 2, 1, 3, 2, 2, 2, 1, 1, 2, 1,
-    2, 3, 2, 2, 1, 1, 2, 1, 2, 2, 2, 2, 1, 1, 2, 1,
-    2, 3, 2, 2, 3, 3, 3, 1, 2, 2, 2, 2, 1, 1, 2, 1,
-    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-    2, 2, 2, 2, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1,
-    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-    1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-    2, 3, 3, 4, 3, 4, 2, 4, 2, 4, 3, 0, 3, 6, 2, 4,
-    2, 3, 3, 0, 3, 4, 2, 4, 2, 4, 3, 0, 3, 0, 2, 4,
-    3, 3, 2, 0, 0, 4, 2, 4, 4, 1, 4, 0, 0, 0, 2, 4,
-    3, 3, 2, 1, 0, 4, 2, 4, 3, 2, 4, 1, 0, 0, 2, 4};
-
-/**
- * @brief CB-prefixed opcode t-cycle counts.
- */
-constexpr std::array<uint8_t, 256> kCBCycleTable = {
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-    2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
-    2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
-    2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
-    2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-    2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2};
-
-constexpr uint8_t kRetTakenExtra = 3;
-constexpr uint8_t kJpTakenExtra = 1;
-constexpr uint8_t kCallTakenExtra = 3;
-constexpr uint8_t kJrTakenExtra = 1;
-
 void CPU::init(Bus &bus, Clock &clock)
 {
     mBusPtr = &bus;
@@ -68,18 +19,25 @@ CPU::~CPU()
     mClockPtr = nullptr;
 }
 
-int CPU::step()
+void CPU::step()
 {
-    int interruptCycles = handleInterrupt();
-    if (interruptCycles > 0)
+    auto &ic = mBusPtr->getInterruptController();
+    if (ic.pending())
     {
-        return interruptCycles;
+        mHalted = false;
+        if (mIME)
+        {
+            handleInterrupt();
+            return;
+        }
     }
 
     if (mHalted)
-        return kCycleTable[0x76];
+    {
+        idle();
+        return;
+    }
 
-    int extraCycles = 0;
     uint8_t opcode = fetch8();
     switch (opcode)
     {
@@ -89,23 +47,23 @@ int CPU::step()
     }
     case 0x02: // LD [BC], A
     {
-        mBusPtr->write(mRegisters.getBC(), mRegisters.getA());
+        write(mRegisters.getBC(), mRegisters.getA());
         break;
     }
     case 0x12: // LD [DE], A
     {
-        mBusPtr->write(mRegisters.getDE(), mRegisters.getA());
+        write(mRegisters.getDE(), mRegisters.getA());
         break;
     }
     case 0x22: // LD [HL+], A
     {
-        mBusPtr->write(mRegisters.getHL(), mRegisters.getA());
+        write(mRegisters.getHL(), mRegisters.getA());
         mRegisters.setHL(static_cast<uint16_t>(mRegisters.getHL() + 1));
         break;
     }
     case 0x32: // LD [HL-], A
     {
-        mBusPtr->write(mRegisters.getHL(), mRegisters.getA());
+        write(mRegisters.getHL(), mRegisters.getA());
         mRegisters.setHL(static_cast<uint16_t>(mRegisters.getHL() - 1));
         break;
     }
@@ -126,28 +84,28 @@ int CPU::step()
     }
     case 0x36: // LD (HL), d8
     {
-        mBusPtr->write(mRegisters.getHL(), fetch8());
+        write(mRegisters.getHL(), fetch8());
         break;
     }
     case 0x0a: // LD A, (BC)
     {
-        mRegisters.setA(mBusPtr->read(mRegisters.getBC()));
+        mRegisters.setA(read(mRegisters.getBC()));
         break;
     }
     case 0x1a: // LD A, (DE)
     {
-        mRegisters.setA(mBusPtr->read(mRegisters.getDE()));
+        mRegisters.setA(read(mRegisters.getDE()));
         break;
     }
     case 0x2a: // LD A, (HL+)
     {
-        mRegisters.setA(mBusPtr->read(mRegisters.getHL()));
+        mRegisters.setA(read(mRegisters.getHL()));
         mRegisters.setHL(static_cast<uint16_t>(mRegisters.getHL() + 1));
         break;
     }
     case 0x3a: // LD A, (HL-)
     {
-        mRegisters.setA(mBusPtr->read(mRegisters.getHL()));
+        mRegisters.setA(read(mRegisters.getHL()));
         mRegisters.setHL(static_cast<uint16_t>(mRegisters.getHL() - 1));
         break;
     }
@@ -202,7 +160,7 @@ int CPU::step()
     }
     case 0x46: // LD B, (HL)
     {
-        mRegisters.setB(mBusPtr->read(mRegisters.getHL()));
+        mRegisters.setB(read(mRegisters.getHL()));
         break;
     }
     case 0x47: // LD B, A
@@ -241,7 +199,7 @@ int CPU::step()
     }
     case 0x4e: // LD C, (HL)
     {
-        mRegisters.setC(mBusPtr->read(mRegisters.getHL()));
+        mRegisters.setC(read(mRegisters.getHL()));
         break;
     }
     case 0x4f: // LD C, A
@@ -280,7 +238,7 @@ int CPU::step()
     }
     case 0x56: // LD D, (HL)
     {
-        mRegisters.setD(mBusPtr->read(mRegisters.getHL()));
+        mRegisters.setD(read(mRegisters.getHL()));
         break;
     }
     case 0x57: // LD D, A
@@ -319,7 +277,7 @@ int CPU::step()
     }
     case 0x5e: // LD E, (HL)
     {
-        mRegisters.setE(mBusPtr->read(mRegisters.getHL()));
+        mRegisters.setE(read(mRegisters.getHL()));
         break;
     }
     case 0x5f: // LD E, A
@@ -358,7 +316,7 @@ int CPU::step()
     }
     case 0x66: // LD H, (HL)
     {
-        mRegisters.setH(mBusPtr->read(mRegisters.getHL()));
+        mRegisters.setH(read(mRegisters.getHL()));
         break;
     }
     case 0x67: // LD H, A
@@ -397,7 +355,7 @@ int CPU::step()
     }
     case 0x6e: // LD L, (HL)
     {
-        mRegisters.setL(mBusPtr->read(mRegisters.getHL()));
+        mRegisters.setL(read(mRegisters.getHL()));
         break;
     }
     case 0x6f: // LD L, A
@@ -407,37 +365,37 @@ int CPU::step()
     }
     case 0x70: // LD (HL), B
     {
-        mBusPtr->write(mRegisters.getHL(), mRegisters.getB());
+        write(mRegisters.getHL(), mRegisters.getB());
         break;
     }
     case 0x71: // LD (HL), C
     {
-        mBusPtr->write(mRegisters.getHL(), mRegisters.getC());
+        write(mRegisters.getHL(), mRegisters.getC());
         break;
     }
     case 0x72: // LD (HL), D
     {
-        mBusPtr->write(mRegisters.getHL(), mRegisters.getD());
+        write(mRegisters.getHL(), mRegisters.getD());
         break;
     }
     case 0x73: // LD (HL), E
     {
-        mBusPtr->write(mRegisters.getHL(), mRegisters.getE());
+        write(mRegisters.getHL(), mRegisters.getE());
         break;
     }
     case 0x74: // LD (HL), H
     {
-        mBusPtr->write(mRegisters.getHL(), mRegisters.getH());
+        write(mRegisters.getHL(), mRegisters.getH());
         break;
     }
     case 0x75: // LD (HL), L
     {
-        mBusPtr->write(mRegisters.getHL(), mRegisters.getL());
+        write(mRegisters.getHL(), mRegisters.getL());
         break;
     }
     case 0x77: // LD (HL), A
     {
-        mBusPtr->write(mRegisters.getHL(), mRegisters.getA());
+        write(mRegisters.getHL(), mRegisters.getA());
         break;
     }
     case 0x78: // LD A, B
@@ -472,7 +430,7 @@ int CPU::step()
     }
     case 0x7e: // LD A, (HL)
     {
-        mRegisters.setA(mBusPtr->read(mRegisters.getHL()));
+        mRegisters.setA(read(mRegisters.getHL()));
         break;
     }
     case 0x7f: // LD A, A
@@ -482,37 +440,37 @@ int CPU::step()
     case 0xe0: // LD (a8), A
     {
         uint16_t address = fetch8() + 0xff00;
-        mBusPtr->write(address, mRegisters.getA());
+        write(address, mRegisters.getA());
         break;
     }
     case 0xf0: // LD A, (a8)
     {
         uint16_t address = fetch8() + 0xff00;
-        mRegisters.setA(mBusPtr->read(address));
+        mRegisters.setA(read(address));
         break;
     }
     case 0xe2: // LD (C), A
     {
         uint16_t address = mRegisters.getC() + 0xff00;
-        mBusPtr->write(address, mRegisters.getA());
+        write(address, mRegisters.getA());
         break;
     }
     case 0xf2: // LD A, (C)
     {
         uint16_t address = mRegisters.getC() + 0xff00;
-        mRegisters.setA(mBusPtr->read(address));
+        mRegisters.setA(read(address));
         break;
     }
     case 0xea: // LD (a16), A
     {
         uint16_t address = fetch16();
-        mBusPtr->write(address, mRegisters.getA());
+        write(address, mRegisters.getA());
         break;
     }
     case 0xfa: // LD A, (a16)
     {
         uint16_t address = fetch16();
-        mRegisters.setA(mBusPtr->read(address));
+        mRegisters.setA(read(address));
         break;
     }
     case 0x01: // LD BC, d16
@@ -543,12 +501,13 @@ int CPU::step()
     {
         uint16_t a16 = fetch16();
         auto [high, low] = makeBytes(mRegisters.getSP());
-        mBusPtr->write(a16, low);
-        mBusPtr->write(a16 + 1, high);
+        write(a16, low);
+        write(a16 + 1, high);
         break;
     }
     case 0xf8: // LD HL, SP+s8
     {
+        idle();
         int8_t s8 = static_cast<int8_t>(fetch8());
         int32_t sum = static_cast<int32_t>(mRegisters.getSP()) + s8;
         bool halfCarryFlag = (mRegisters.getSP() & 0x0f) + (s8 & 0x0f) > 0x0f;
@@ -563,27 +522,32 @@ int CPU::step()
     }
     case 0xf9: // LD SP, HL
     {
+        idle();
         mRegisters.setSP(mRegisters.getHL());
         break;
     }
     case 0x03: // INC BC
     {
         mRegisters.setBC(static_cast<uint16_t>(mRegisters.getBC() + 1));
+        idle();
         break;
     }
     case 0x13: // INC DE
     {
         mRegisters.setDE(static_cast<uint16_t>(mRegisters.getDE() + 1));
+        idle();
         break;
     }
     case 0x23: // INC HL
     {
         mRegisters.setHL(static_cast<uint16_t>(mRegisters.getHL() + 1));
+        idle();
         break;
     }
     case 0x33: // INC SP
     {
         mRegisters.setSP(static_cast<uint16_t>(mRegisters.getSP() + 1));
+        idle();
         break;
     }
     case 0x04: // INC B
@@ -603,8 +567,8 @@ int CPU::step()
     }
     case 0x34: // INC (HL)
     {
-        uint8_t val = mBusPtr->read(mRegisters.getHL());
-        mBusPtr->write(mRegisters.getHL(), increment(val));
+        uint8_t val = read(mRegisters.getHL());
+        write(mRegisters.getHL(), increment(val));
         break;
     }
     case 0x0c: // INC C
@@ -664,27 +628,31 @@ int CPU::step()
     }
     case 0x35: // DEC (HL)
     {
-        uint8_t val = mBusPtr->read(mRegisters.getHL());
-        mBusPtr->write(mRegisters.getHL(), decrement(val));
+        uint8_t val = read(mRegisters.getHL());
+        write(mRegisters.getHL(), decrement(val));
         break;
     }
     case 0x0b: // DEC BC
     {
+        idle();
         mRegisters.setBC(static_cast<uint16_t>(mRegisters.getBC() - 1));
         break;
     }
     case 0x1b: // DEC DE
     {
+        idle();
         mRegisters.setDE(static_cast<uint16_t>(mRegisters.getDE() - 1));
         break;
     }
     case 0x2b: // DEC HL
     {
+        idle();
         mRegisters.setHL(static_cast<uint16_t>(mRegisters.getHL() - 1));
         break;
     }
     case 0x3b: // DEC SP
     {
+        idle();
         mRegisters.setSP(static_cast<uint16_t>(mRegisters.getSP() - 1));
         break;
     }
@@ -693,8 +661,8 @@ int CPU::step()
         int8_t s8 = fetch8();
         if (!mRegisters.getFlag(Flag::Zero))
         {
+            idle();
             mRegisters.setPC(mRegisters.getPC() + s8);
-            extraCycles = kJrTakenExtra;
         }
         break;
     }
@@ -703,14 +671,15 @@ int CPU::step()
         int8_t s8 = fetch8();
         if (!mRegisters.getFlag(Flag::Carry))
         {
+            idle();
             mRegisters.setPC(mRegisters.getPC() + s8);
-            extraCycles = kJrTakenExtra;
         }
         break;
     }
     case 0x18: // JR s8
     {
         int8_t s8 = fetch8();
+        idle();
         mRegisters.setPC(mRegisters.getPC() + s8);
         break;
     }
@@ -719,8 +688,8 @@ int CPU::step()
         int8_t s8 = fetch8();
         if (mRegisters.getFlag(Flag::Zero))
         {
+            idle();
             mRegisters.setPC(mRegisters.getPC() + s8);
-            extraCycles = kJrTakenExtra;
         }
         break;
     }
@@ -729,8 +698,8 @@ int CPU::step()
         int8_t s8 = fetch8();
         if (mRegisters.getFlag(Flag::Carry))
         {
+            idle();
             mRegisters.setPC(mRegisters.getPC() + s8);
-            extraCycles = kJrTakenExtra;
         }
         break;
     }
@@ -842,7 +811,7 @@ int CPU::step()
     }
     case 0x86: // ADD A, (HL)
     {
-        mRegisters.setA(add(mRegisters.getA(), mBusPtr->read(mRegisters.getHL())));
+        mRegisters.setA(add(mRegisters.getA(), read(mRegisters.getHL())));
         break;
     }
     case 0x87: // ADD A, A
@@ -857,6 +826,8 @@ int CPU::step()
     }
     case 0xe8: // ADD SP, s8
     {
+        idle();
+        idle();
         int8_t s8 = fetch8();
         uint8_t u8 = static_cast<uint8_t>(s8);
 
@@ -963,7 +934,7 @@ int CPU::step()
     }
     case 0x8e: // ADC A, (HL)
     {
-        mRegisters.setA(addCarry(mRegisters.getA(), mBusPtr->read(mRegisters.getHL())));
+        mRegisters.setA(addCarry(mRegisters.getA(), read(mRegisters.getHL())));
         break;
     }
     case 0x8f: // ADC A, A
@@ -1008,7 +979,7 @@ int CPU::step()
     }
     case 0x96: // SUB (HL)
     {
-        mRegisters.setA(sub(mRegisters.getA(), mBusPtr->read(mRegisters.getHL())));
+        mRegisters.setA(sub(mRegisters.getA(), read(mRegisters.getHL())));
         break;
     }
     case 0x97: // SUB A
@@ -1053,7 +1024,7 @@ int CPU::step()
     }
     case 0x9e: // SBC A, (HL)
     {
-        mRegisters.setA(subCarry(mRegisters.getA(), mBusPtr->read(mRegisters.getHL())));
+        mRegisters.setA(subCarry(mRegisters.getA(), read(mRegisters.getHL())));
         break;
     }
     case 0x9f: // SBC A, A
@@ -1098,7 +1069,7 @@ int CPU::step()
     }
     case 0xa6: // AND A, (HL)
     {
-        mRegisters.setA(opAnd(mRegisters.getA(), mBusPtr->read(mRegisters.getHL())));
+        mRegisters.setA(opAnd(mRegisters.getA(), read(mRegisters.getHL())));
         break;
     }
     case 0xa7: // AND A, A
@@ -1143,7 +1114,7 @@ int CPU::step()
     }
     case 0xae: // XOR A, (HL)
     {
-        mRegisters.setA(opXor(mRegisters.getA(), mBusPtr->read(mRegisters.getHL())));
+        mRegisters.setA(opXor(mRegisters.getA(), read(mRegisters.getHL())));
         break;
     }
     case 0xaf: // XOR A, A
@@ -1188,7 +1159,7 @@ int CPU::step()
     }
     case 0xb6: // OR A, (HL)
     {
-        mRegisters.setA(opOr(mRegisters.getA(), mBusPtr->read(mRegisters.getHL())));
+        mRegisters.setA(opOr(mRegisters.getA(), read(mRegisters.getHL())));
         break;
     }
     case 0xb7: // OR A, A
@@ -1233,7 +1204,7 @@ int CPU::step()
     }
     case 0xbe: // CP A, (HL)
     {
-        cp(mRegisters.getA(), mBusPtr->read(mRegisters.getHL()));
+        cp(mRegisters.getA(), read(mRegisters.getHL()));
         break;
     }
     case 0xbf: // CP A, A
@@ -1248,47 +1219,53 @@ int CPU::step()
     }
     case 0xc0: // RET NZ
     {
+        idle();
         if (!mRegisters.getFlag(Flag::Zero))
         {
+            idle();
             mRegisters.setPC(pop16());
-            extraCycles = kRetTakenExtra;
         }
         break;
     }
     case 0xd0: // RET NC
     {
+        idle();
         if (!mRegisters.getFlag(Flag::Carry))
         {
+            idle();
             mRegisters.setPC(pop16());
-            extraCycles = kRetTakenExtra;
         }
         break;
     }
     case 0xc8: // RET Z
     {
+        idle();
         if (mRegisters.getFlag(Flag::Zero))
         {
+            idle();
             mRegisters.setPC(pop16());
-            extraCycles = kRetTakenExtra;
         }
         break;
     }
     case 0xd8: // RET C
     {
+        idle();
         if (mRegisters.getFlag(Flag::Carry))
         {
+            idle();
             mRegisters.setPC(pop16());
-            extraCycles = kRetTakenExtra;
         }
         break;
     }
     case 0xc9: // RET
     {
+        idle();
         mRegisters.setPC(pop16());
         break;
     }
     case 0xd9: // RETI
     {
+        idle();
         mRegisters.setPC(pop16());
         mIME = true;
         break;
@@ -1318,8 +1295,8 @@ int CPU::step()
         uint16_t a16 = fetch16();
         if (!mRegisters.getFlag(Flag::Zero))
         {
+            idle();
             mRegisters.setPC(a16);
-            extraCycles = kJpTakenExtra;
         }
         break;
     }
@@ -1328,8 +1305,8 @@ int CPU::step()
         uint16_t a16 = fetch16();
         if (!mRegisters.getFlag(Flag::Carry))
         {
+            idle();
             mRegisters.setPC(a16);
-            extraCycles = kJpTakenExtra;
         }
         break;
     }
@@ -1338,8 +1315,8 @@ int CPU::step()
         uint16_t a16 = fetch16();
         if (mRegisters.getFlag(Flag::Zero))
         {
+            idle();
             mRegisters.setPC(a16);
-            extraCycles = kJpTakenExtra;
         }
         break;
     }
@@ -1348,14 +1325,15 @@ int CPU::step()
         uint16_t a16 = fetch16();
         if (mRegisters.getFlag(Flag::Carry))
         {
+            idle();
             mRegisters.setPC(a16);
-            extraCycles = kJpTakenExtra;
         }
         break;
     }
     case 0xc3: // JP a16
     {
         uint16_t a16 = fetch16();
+        idle();
         mRegisters.setPC(a16);
         break;
     }
@@ -1366,21 +1344,25 @@ int CPU::step()
     }
     case 0xc5: // PUSH BC
     {
+        idle();
         push16(mRegisters.getBC());
         break;
     }
     case 0xd5: // PUSH DE
     {
+        idle();
         push16(mRegisters.getDE());
         break;
     }
     case 0xe5: // PUSH HL
     {
+        idle();
         push16(mRegisters.getHL());
         break;
     }
     case 0xf5: // PUSH AF
     {
+        idle();
         push16(mRegisters.getAF());
         break;
     }
@@ -1389,9 +1371,9 @@ int CPU::step()
         uint16_t a16 = fetch16();
         if (!mRegisters.getFlag(Flag::Zero))
         {
+            idle();
             push16(mRegisters.getPC());
             mRegisters.setPC(a16);
-            extraCycles = kCallTakenExtra;
         }
         break;
     }
@@ -1400,9 +1382,9 @@ int CPU::step()
         uint16_t a16 = fetch16();
         if (!mRegisters.getFlag(Flag::Carry))
         {
+            idle();
             push16(mRegisters.getPC());
             mRegisters.setPC(a16);
-            extraCycles = kCallTakenExtra;
         }
         break;
     }
@@ -1411,9 +1393,9 @@ int CPU::step()
         uint16_t a16 = fetch16();
         if (mRegisters.getFlag(Flag::Zero))
         {
+            idle();
             push16(mRegisters.getPC());
             mRegisters.setPC(a16);
-            extraCycles = kCallTakenExtra;
         }
         break;
     }
@@ -1422,70 +1404,79 @@ int CPU::step()
         uint16_t a16 = fetch16();
         if (mRegisters.getFlag(Flag::Carry))
         {
+            idle();
             push16(mRegisters.getPC());
             mRegisters.setPC(a16);
-            extraCycles = kCallTakenExtra;
         }
         break;
     }
     case 0xcd: // CALL a16
     {
         uint16_t a16 = fetch16();
+        idle();
         push16(mRegisters.getPC());
         mRegisters.setPC(a16);
         break;
     }
     case 0xc7: // RST 0
     {
+        idle();
         push16(mRegisters.getPC());
         mRegisters.setPC(0x0000);
         break;
     }
     case 0xd7: // RST 2
     {
+        idle();
         push16(mRegisters.getPC());
         mRegisters.setPC(0x0010);
         break;
     }
     case 0xe7: // RST 4
     {
+        idle();
         push16(mRegisters.getPC());
         mRegisters.setPC(0x0020);
         break;
     }
     case 0xf7: // RST 6
     {
+        idle();
         push16(mRegisters.getPC());
         mRegisters.setPC(0x0030);
         break;
     }
     case 0xcf: // RST 1
     {
+        idle();
         push16(mRegisters.getPC());
         mRegisters.setPC(0x0008);
         break;
     }
     case 0xdf: // RST 3
     {
+        idle();
         push16(mRegisters.getPC());
         mRegisters.setPC(0x0018);
         break;
     }
     case 0xef: // RST 5
     {
+        idle();
         push16(mRegisters.getPC());
         mRegisters.setPC(0x0028);
         break;
     }
     case 0xff: // RST 7
     {
+        idle();
         push16(mRegisters.getPC());
         mRegisters.setPC(0x0038);
         break;
     }
     case 0x10: // STOP (0x1000)
     {
-        fetch8();       // Fetch required 2nd byte (0x00)
+        fetch8();          // Fetch required 2nd byte (0x00)
         mIsStopped = true; // Pause CPU execution until button press/reset
         break;
     }
@@ -1509,7 +1500,6 @@ int CPU::step()
     case 0xcb: // 16-bit opcodes
     {
         uint8_t secondByte = fetch8();
-        extraCycles = kCBCycleTable[secondByte];
         switch (secondByte)
         {
         case 0x00: // RLC B
@@ -1544,7 +1534,7 @@ int CPU::step()
         }
         case 0x06: // RLC (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), rlc(mBusPtr->read(mRegisters.getHL())));
+            write(mRegisters.getHL(), rlc(read(mRegisters.getHL())));
             break;
         }
         case 0x07: // RLC A
@@ -1584,7 +1574,7 @@ int CPU::step()
         }
         case 0x16: // RL (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), rl(mBusPtr->read(mRegisters.getHL())));
+            write(mRegisters.getHL(), rl(read(mRegisters.getHL())));
             break;
         }
         case 0x17: // RL A
@@ -1624,7 +1614,7 @@ int CPU::step()
         }
         case 0x0e: // RRC (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), rrc(mBusPtr->read(mRegisters.getHL())));
+            write(mRegisters.getHL(), rrc(read(mRegisters.getHL())));
             break;
         }
         case 0x0f: // RRC A
@@ -1664,7 +1654,7 @@ int CPU::step()
         }
         case 0x1e: // RR (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), rr(mBusPtr->read(mRegisters.getHL())));
+            write(mRegisters.getHL(), rr(read(mRegisters.getHL())));
             break;
         }
         case 0x1f: // RR A
@@ -1704,7 +1694,7 @@ int CPU::step()
         }
         case 0x26: // SLA (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), sla(mBusPtr->read(mRegisters.getHL())));
+            write(mRegisters.getHL(), sla(read(mRegisters.getHL())));
             break;
         }
         case 0x27: // SLA A
@@ -1744,7 +1734,7 @@ int CPU::step()
         }
         case 0x2e: // SRA (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), sra(mBusPtr->read(mRegisters.getHL())));
+            write(mRegisters.getHL(), sra(read(mRegisters.getHL())));
             break;
         }
         case 0x2f: // SRA A
@@ -1784,7 +1774,7 @@ int CPU::step()
         }
         case 0x36: // SWAP (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), swap(mBusPtr->read(mRegisters.getHL())));
+            write(mRegisters.getHL(), swap(read(mRegisters.getHL())));
             break;
         }
         case 0x37: // SWAP A
@@ -1824,7 +1814,7 @@ int CPU::step()
         }
         case 0x3e: // SRL (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), srl(mBusPtr->read(mRegisters.getHL())));
+            write(mRegisters.getHL(), srl(read(mRegisters.getHL())));
             break;
         }
         case 0x3f: // SRL A
@@ -1864,7 +1854,7 @@ int CPU::step()
         }
         case 0x46: // BIT 0, (HL)
         {
-            bit(mBusPtr->read(mRegisters.getHL()), 0);
+            bit(read(mRegisters.getHL()), 0);
             break;
         }
         case 0x47: // BIT 0, A
@@ -1904,7 +1894,7 @@ int CPU::step()
         }
         case 0x4e: // BIT 1, (HL)
         {
-            bit(mBusPtr->read(mRegisters.getHL()), 1);
+            bit(read(mRegisters.getHL()), 1);
             break;
         }
         case 0x4f: // BIT 1, A
@@ -1944,7 +1934,7 @@ int CPU::step()
         }
         case 0x56: // BIT 2, (HL)
         {
-            bit(mBusPtr->read(mRegisters.getHL()), 2);
+            bit(read(mRegisters.getHL()), 2);
             break;
         }
         case 0x57: // BIT 2, A
@@ -1984,7 +1974,7 @@ int CPU::step()
         }
         case 0x5e: // BIT 3, (HL)
         {
-            bit(mBusPtr->read(mRegisters.getHL()), 3);
+            bit(read(mRegisters.getHL()), 3);
             break;
         }
         case 0x5f: // BIT 3, A
@@ -2024,7 +2014,7 @@ int CPU::step()
         }
         case 0x66: // BIT 4, (HL)
         {
-            bit(mBusPtr->read(mRegisters.getHL()), 4);
+            bit(read(mRegisters.getHL()), 4);
             break;
         }
         case 0x67: // BIT 4, A
@@ -2064,7 +2054,7 @@ int CPU::step()
         }
         case 0x6e: // BIT 5, (HL)
         {
-            bit(mBusPtr->read(mRegisters.getHL()), 5);
+            bit(read(mRegisters.getHL()), 5);
             break;
         }
         case 0x6f: // BIT 5, A
@@ -2104,7 +2094,7 @@ int CPU::step()
         }
         case 0x76: // BIT 6, (HL)
         {
-            bit(mBusPtr->read(mRegisters.getHL()), 6);
+            bit(read(mRegisters.getHL()), 6);
             break;
         }
         case 0x77: // BIT 6, A
@@ -2144,7 +2134,7 @@ int CPU::step()
         }
         case 0x7e: // BIT 7, (HL)
         {
-            bit(mBusPtr->read(mRegisters.getHL()), 7);
+            bit(read(mRegisters.getHL()), 7);
             break;
         }
         case 0x7f: // BIT 7, A
@@ -2184,7 +2174,7 @@ int CPU::step()
         }
         case 0x86: // RES 0, (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), res(mBusPtr->read(mRegisters.getHL()), 0));
+            write(mRegisters.getHL(), res(read(mRegisters.getHL()), 0));
             break;
         }
         case 0x87: // RES 0, A
@@ -2224,7 +2214,7 @@ int CPU::step()
         }
         case 0x8e: // RES 1, (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), res(mBusPtr->read(mRegisters.getHL()), 1));
+            write(mRegisters.getHL(), res(read(mRegisters.getHL()), 1));
             break;
         }
         case 0x8f: // RES 1, A
@@ -2264,7 +2254,7 @@ int CPU::step()
         }
         case 0x96: // RES 2, (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), res(mBusPtr->read(mRegisters.getHL()), 2));
+            write(mRegisters.getHL(), res(read(mRegisters.getHL()), 2));
             break;
         }
         case 0x97: // RES 2, A
@@ -2304,7 +2294,7 @@ int CPU::step()
         }
         case 0x9e: // RES 3, (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), res(mBusPtr->read(mRegisters.getHL()), 3));
+            write(mRegisters.getHL(), res(read(mRegisters.getHL()), 3));
             break;
         }
         case 0x9f: // RES 3, A
@@ -2344,7 +2334,7 @@ int CPU::step()
         }
         case 0xa6: // RES 4, (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), res(mBusPtr->read(mRegisters.getHL()), 4));
+            write(mRegisters.getHL(), res(read(mRegisters.getHL()), 4));
             break;
         }
         case 0xa7: // RES 4, A
@@ -2384,7 +2374,7 @@ int CPU::step()
         }
         case 0xae: // RES 5, (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), res(mBusPtr->read(mRegisters.getHL()), 5));
+            write(mRegisters.getHL(), res(read(mRegisters.getHL()), 5));
             break;
         }
         case 0xaf: // RES 5, A
@@ -2424,7 +2414,7 @@ int CPU::step()
         }
         case 0xb6: // RES 6, (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), res(mBusPtr->read(mRegisters.getHL()), 6));
+            write(mRegisters.getHL(), res(read(mRegisters.getHL()), 6));
             break;
         }
         case 0xb7: // RES 6, A
@@ -2464,7 +2454,7 @@ int CPU::step()
         }
         case 0xbe: // RES 7, (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), res(mBusPtr->read(mRegisters.getHL()), 7));
+            write(mRegisters.getHL(), res(read(mRegisters.getHL()), 7));
             break;
         }
         case 0xbf: // RES 7, A
@@ -2504,7 +2494,7 @@ int CPU::step()
         }
         case 0xc6: // SET 0, (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), set(mBusPtr->read(mRegisters.getHL()), 0));
+            write(mRegisters.getHL(), set(read(mRegisters.getHL()), 0));
             break;
         }
         case 0xc7: // SET 0, A
@@ -2544,7 +2534,7 @@ int CPU::step()
         }
         case 0xce: // SET 1, (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), set(mBusPtr->read(mRegisters.getHL()), 1));
+            write(mRegisters.getHL(), set(read(mRegisters.getHL()), 1));
             break;
         }
         case 0xcf: // SET 1, A
@@ -2584,7 +2574,7 @@ int CPU::step()
         }
         case 0xd6: // SET 2, (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), set(mBusPtr->read(mRegisters.getHL()), 2));
+            write(mRegisters.getHL(), set(read(mRegisters.getHL()), 2));
             break;
         }
         case 0xd7: // SET 2, A
@@ -2624,7 +2614,7 @@ int CPU::step()
         }
         case 0xde: // SET 3, (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), set(mBusPtr->read(mRegisters.getHL()), 3));
+            write(mRegisters.getHL(), set(read(mRegisters.getHL()), 3));
             break;
         }
         case 0xdf: // SET 3, A
@@ -2664,7 +2654,7 @@ int CPU::step()
         }
         case 0xe6: // SET 4, (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), set(mBusPtr->read(mRegisters.getHL()), 4));
+            write(mRegisters.getHL(), set(read(mRegisters.getHL()), 4));
             break;
         }
         case 0xe7: // SET 4, A
@@ -2704,7 +2694,7 @@ int CPU::step()
         }
         case 0xee: // SET 5, (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), set(mBusPtr->read(mRegisters.getHL()), 5));
+            write(mRegisters.getHL(), set(read(mRegisters.getHL()), 5));
             break;
         }
         case 0xef: // SET 5, A
@@ -2744,7 +2734,7 @@ int CPU::step()
         }
         case 0xf6: // SET 6, (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), set(mBusPtr->read(mRegisters.getHL()), 6));
+            write(mRegisters.getHL(), set(read(mRegisters.getHL()), 6));
             break;
         }
         case 0xf7: // SET 6, A
@@ -2784,7 +2774,7 @@ int CPU::step()
         }
         case 0xfe: // SET 7, (HL)
         {
-            mBusPtr->write(mRegisters.getHL(), set(mBusPtr->read(mRegisters.getHL()), 7));
+            write(mRegisters.getHL(), set(read(mRegisters.getHL()), 7));
             break;
         }
         case 0xff: // SET 7, A
@@ -2811,8 +2801,6 @@ int CPU::step()
         mIMEEnableScheduled = true;
         mIMEEnablePending = false;
     }
-
-    return kCycleTable[opcode] + extraCycles;
 }
 
 uint8_t CPU::fetch8()
@@ -2855,6 +2843,8 @@ uint8_t CPU::decrement(uint8_t r8)
 
 uint16_t CPU::add(uint16_t first, uint16_t second)
 {
+    idle();
+
     uint32_t res = first + second;
 
     bool setHalfCarry = (first & 0x0fff) + (second & 0x0fff) > 0x0fff;
@@ -3118,51 +3108,56 @@ uint8_t CPU::set(uint8_t reg, uint8_t bitIndex)
     return reg | (1 << bitIndex);
 }
 
-int CPU::handleInterrupt()
+void CPU::handleInterrupt()
 {
-    uint8_t ieReg = mBusPtr->read(0xffff);
-    uint8_t ifReg = mBusPtr->read(0xff0f);
-    if ((ieReg & ifReg & 0x1f) > 0 && mHalted)
+    static constexpr uint16_t kVectors[5] = {0x0040, 0x0048, 0x0050, 0x0058, 0x0060};
+    auto &ic = mBusPtr->getInterruptController();
+
+    mIME = false;
+    idle();
+    idle();
+
+    // remark for later: push PC, high byte first, decide the vector AFTER the high-byte push:
+    // that write may have changed IE
+    push16(mRegisters.getPC());
+
+    uint8_t pending = ic.pending();
+    uint16_t vector = 0x0000; // dispatch cancelled if nothing is pending anymore
+    if (pending != 0)
     {
-        mHalted = false;
+        uint8_t bit = static_cast<uint8_t>(std::countr_zero(pending)); // lowest bit = highest priority
+        ic.clear(bit);                                                 // clear IF bit directly, no tick
+        vector = kVectors[bit];
     }
 
-    if (!mIME)
-    {
-        return 0;
-    }
-
-    uint8_t pending = ieReg & ifReg & 0x1f;
-
-    if (0 == pending)
-    {
-        return 0;
-    }
-
-    for (auto bit = static_cast<uint8_t>(Interrupt::VBlank); bit <= static_cast<uint8_t>(Interrupt::Joypad); ++bit)
-    {
-        if (pending & (1 << bit))
-        {
-            mIME = false;                                // disable further interrupts during handling
-            mBusPtr->write(0xff0f, ifReg & ~(1 << bit)); // clear the serviced bit
-            push16(mRegisters.getPC());
-            static constexpr uint16_t kVectors[5] = {0x0040, 0x0048, 0x0050, 0x0058, 0x0060};
-            mRegisters.setPC(kVectors[bit]);
-            return 5; // servicing an interrupt takes 5 M-cycles
-        }
-    }
-
-    return 0;
+    idle();
+    mRegisters.setPC(vector);
 }
 
 uint8_t CPU::read(uint16_t address) const
 {
+    if (!mClockPtr)
+    {
+        throw std::runtime_error("Clock is not initialized for CPU!");
+    }
+    if (!mBusPtr)
+    {
+        throw std::runtime_error("Bus is not initialized for CPU!");
+    }
     mClockPtr->tickM();
     return mBusPtr->read(address);
 }
 
 void CPU::write(uint16_t address, uint8_t value)
 {
+    if (!mClockPtr)
+    {
+        throw std::runtime_error("Clock is not initialized for CPU!");
+    }
+    if (!mBusPtr)
+    {
+        throw std::runtime_error("Bus is not initialized for CPU!");
+    }
     mClockPtr->tickM();
     mBusPtr->write(address, value);
 }

@@ -16,6 +16,16 @@ enum class Interrupt
     Joypad
 };
 
+struct InterruptController
+{
+    uint8_t IF = 0xE1;
+    uint8_t IE = 0x00;
+
+    void request(Interrupt i);
+    uint8_t pending() const;
+    void clear(uint8_t bit);
+};
+
 class Bus
 {
 public:
@@ -23,6 +33,8 @@ public:
     void init(Cartridge &cartridge, Timer &timer);
     [[nodiscard]] uint8_t read(uint16_t address) const;
     void write(uint16_t address, uint8_t value);
+    const InterruptController &getInterruptController() const;
+    InterruptController &getInterruptController();
     ~Bus();
 
 private:
@@ -30,6 +42,7 @@ private:
 
     Cartridge *mCartridgePtr = nullptr; // non-owning
     Timer *mTimerPtr = nullptr;         // non-owning
+    InterruptController mIC;
     std::array<uint8_t, 0x2000> mVram = {};
     std::array<uint8_t, 0x2000> mWram = {};
     std::array<uint8_t, 0x7f> mHram = {};

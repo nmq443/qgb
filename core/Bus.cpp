@@ -2,7 +2,22 @@
 
 namespace qgb
 {
-void Bus::init(Cartridge& cartridge, Timer& timer)
+void InterruptController::request(Interrupt i)
+{
+    IF |= (1 << static_cast<int>(i));
+}
+
+uint8_t InterruptController::pending() const
+{
+    return IF & IE & 0x1F;
+}
+
+void InterruptController::clear(uint8_t bit)
+{
+    IF &= ~(1 << bit);
+}
+
+void Bus::init(Cartridge &cartridge, Timer &timer)
 {
     mCartridgePtr = &cartridge;
     mTimerPtr = &timer;
@@ -45,7 +60,7 @@ uint8_t Bus::read(uint16_t address) const
     {
         if (0xff0f == address)
         {
-            return mIF;
+            return mIC.IF;
         }
         else if (0xff04 <= address && address <= 0xff07)
         {
@@ -59,7 +74,7 @@ uint8_t Bus::read(uint16_t address) const
     }
     else if (0xffff == address) // interrupt enable register
     {
-        return mIE;
+        return mIC.IE;
     }
     return 0;
 }
@@ -94,7 +109,7 @@ void Bus::write(uint16_t address, uint8_t value)
     {
         if (0xff0f == address) // interrupt flag
         {
-            mIF = value;
+            mIC.IF = value;
         }
         else if (0xff04 <= address && address <= 0xff07)
         {
@@ -111,13 +126,23 @@ void Bus::write(uint16_t address, uint8_t value)
     }
     else if (0xffff == address) // interrupt enable register
     {
-        mIE = value;
+        mIC.IE = value;
     }
+}
+
+const InterruptController &Bus::getInterruptController() const
+{
+    return mIC;
+}
+
+InterruptController &Bus::getInterruptController()
+{
+    return mIC;
 }
 
 void Bus::raiseInterrupt(Interrupt interrupt)
 {
-    mIF |= (1 << static_cast<int>(interrupt));
+    mIC.request(interrupt);
 }
 
 Bus::~Bus()

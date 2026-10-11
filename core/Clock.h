@@ -9,7 +9,9 @@ class Clock
 {
 public:
     Clock() = default;
+    void addDevice(IClockable& device);
     void tickM();
+    ~Clock();
 
 private:
     std::vector<IClockable *> mDevices;

@@ -11,7 +11,7 @@ class CPU
 {
 public:
     CPU() = default;
-    int step();
+    void step();
     void init(Bus &bus, Clock &clock);
     ~CPU();
 
@@ -42,7 +42,7 @@ private:
     void bit(uint8_t reg, uint8_t bitIndex);
     uint8_t res(uint8_t reg, uint8_t bitIndex);
     uint8_t set(uint8_t reg, uint8_t bitIndex);
-    int handleInterrupt();
+    void handleInterrupt();
 
     // CPU primitives
     uint8_t read(uint16_t address) const;

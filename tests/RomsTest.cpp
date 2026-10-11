@@ -31,13 +31,14 @@ static std::string runRomUntilResult(const std::filesystem::path &romPath)
     CPU cpu;
     cpu.init(bus, clock);
 
+    clock.addDevice(timer);
+
     std::string output;
     constexpr int maxSteps = 10'000'000;
 
     for (int i = 0; i < maxSteps; ++i)
     {
-        int mCycles = cpu.step();
-        timer.tick(mCycles * 4);
+        cpu.step();
 
         if (bus.read(0xff02) == 0x81)
         {
@@ -45,16 +46,6 @@ static std::string runRomUntilResult(const std::filesystem::path &romPath)
             output += c;
 
             bus.write(0xFF02, 0x00);
-
-            if (output.find("Passed") != std::string::npos)
-            {
-                return output;
-            }
-
-            if (output.find("Failed") != std::string::npos)
-            {
-                return output;
-            }
         }
     }
 
