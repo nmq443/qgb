@@ -6,6 +6,8 @@ namespace qgb
 Emulator::Emulator()
 {
     mBus.init(mCartridge, mTimer);
+    mCPU.init(mBus, mClock);
+    mClock.addDevice(mTimer);
 }
 
 void Emulator::load(const std::filesystem::path &romPath)
@@ -17,8 +19,7 @@ void Emulator::run()
 {
     while (mRunning)
     {
-        int mCycles = mCPU.step(mBus);
-        mTimer.tick(mCycles * 4);
+        mCPU.step();
 
         if (mBus.read(0xff02) == 0x81)
         {

@@ -1,8 +1,9 @@
-add_library(core STATIC 
-    Bus.cpp
-    Cartridge.cpp
-    CPU.cpp 
-    Emulator.cpp 
-    Registers.cpp 
-    Utils.cpp
-    Timer.cpp)
+add_library(core STATIC
+        Bus.cpp
+        Cartridge.cpp
+        CPU.cpp
+        Emulator.cpp
+        Registers.cpp
+        Utils.cpp
+        Timer.cpp
+        Clock.cpp)

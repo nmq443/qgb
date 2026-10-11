@@ -1,19 +1,20 @@
 #pragma once
 
+#include "IClockable.h"
 #include <cstdint>
 #include <functional>
 
 namespace qgb
 {
-class Timer
+class Timer : public IClockable
 {
 public:
     Timer() = default;
     [[nodiscard]] uint8_t read(uint16_t address) const;
     void write(uint16_t address, uint8_t value);
-    void tick(int tCycles);
+    void tick(int tCycles) override;
     void setTimerInterrupt(const std::function<void()>& timerInterrupt);
-    bool interruptRequested() const;
+    [[nodiscard]] bool interruptRequested() const;
 
 private:
     uint8_t mDiv = 0;

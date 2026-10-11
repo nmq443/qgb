@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Bus.h"
 #include "CPU.h"
 
 namespace qgb
@@ -17,6 +16,7 @@ private:
     Timer mTimer;
     Cartridge mCartridge;
     Bus mBus;
+    Clock mClock;
 
     bool mRunning = true;
 };
