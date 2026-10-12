@@ -8,18 +8,10 @@ int main()
 {
     using namespace qgb;
 
-    CPU cpu;
-    Clock clock;
-    Bus bus;
-    PPU ppu;
-    Cartridge cartridge;
-    Timer timer;
-
-    clock.addDevice(timer);
-    clock.addDevice(ppu);
-    cpu.init(bus, clock);
-    bus.init(cartridge, timer, ppu);
-    cartridge.load("../roms/instr_timing/instr_timing.gb");
+    Emulator emu;
+    emu.load("../roms/instr_timing/instr_timing.gb");
+    emu.setSerialCallback([](char c)
+                          { std::cout << c << std::flush; });
 
     if (!SDL_Init(SDL_INIT_VIDEO))
     {
@@ -61,13 +53,12 @@ int main()
             }
         }
 
-        while (!ppu.isFrameReady())
+        while (!emu.getPPU().isFrameReady())
         {
-            cpu.step();
+            emu.step();
         }
-        // ppu.setFrameReady(false);
 
-        const auto &frameBuffer = ppu.getFrameBuffer();
+        const auto &frameBuffer = emu.getPPU().getFrameBuffer();
         for (size_t i = 0; i < frameBuffer.size(); ++i)
         {
             pixels[i] = SHADES[frameBuffer[i]];
@@ -85,9 +76,4 @@ int main()
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
-
-    // Emulator emu;
-    // emu.load("../roms/instr_timing/instr_timing.gb");
-    // emu.load("../roms/cpu_instrs/individual/02-interrupts.gb");
-    // emu.run();
 }

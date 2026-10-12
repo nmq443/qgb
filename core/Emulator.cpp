@@ -16,20 +16,47 @@ void Emulator::load(const std::filesystem::path &romPath)
     mCartridge.load(romPath);
 }
 
+void Emulator::step()
+{
+    mCPU.step();
+    pollSerial();
+}
+
 void Emulator::run()
 {
     while (mRunning)
     {
-        mCPU.step();
+        step();
+        pollSerial();
+    }
+}
 
-        if (mBus.read(0xff02) == 0x81)
+void Emulator::stop()
+{
+    mRunning = false;
+}
+
+void Emulator::setSerialCallback(SerialCallback cb)
+{
+    mSerialCallback = std::move(cb);
+}
+
+void Emulator::pollSerial()
+{
+    if (mBus.read(0xff02) == 0x81)
+    {
+        char c = static_cast<char>(mBus.read(0xff01));
+        mBus.write(0xFF02, 0x00);
+        if (mSerialCallback)
         {
-            char c = static_cast<char>(mBus.read(0xff01));
-
-            mBus.write(0xFF02, 0x00);
-
-            std::cout << c << std::flush;
+            mSerialCallback(c);
         }
     }
 }
+
+auto Emulator::getPPU() const -> const PPU &
+{
+    return mPPU;
+}
+
 } // namespace qgb
