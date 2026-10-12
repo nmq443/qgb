@@ -5,9 +5,10 @@ namespace qgb
 {
 Emulator::Emulator()
 {
-    mBus.init(mCartridge, mTimer);
+    mBus.init(mCartridge, mTimer, mPPU);
     mCPU.init(mBus, mClock);
     mClock.addDevice(mTimer);
+    mClock.addDevice(mPPU);
 }
 
 void Emulator::load(const std::filesystem::path &romPath)

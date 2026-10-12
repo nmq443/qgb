@@ -27,7 +27,8 @@ static std::string runRomUntilResult(const std::filesystem::path &romPath)
     Timer timer;
     Clock clock;
     Bus bus;
-    bus.init(cartridge, timer);
+    PPU ppu;
+    bus.init(cartridge, timer, ppu);
     CPU cpu;
     cpu.init(bus, clock);
 

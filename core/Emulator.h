@@ -13,6 +13,7 @@ public:
 
 private:
     CPU mCPU;
+    PPU mPPU;
     Timer mTimer;
     Cartridge mCartridge;
     Bus mBus;

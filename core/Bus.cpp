@@ -17,10 +17,11 @@ void InterruptController::clear(uint8_t bit)
     IF &= ~(1 << bit);
 }
 
-void Bus::init(Cartridge &cartridge, Timer &timer)
+void Bus::init(Cartridge &cartridge, Timer &timer, PPU &ppu)
 {
     mCartridgePtr = &cartridge;
     mTimerPtr = &timer;
+    mPPUPtr = &ppu;
 
     auto timerInterrupt = [this]()
     {
@@ -35,9 +36,9 @@ uint8_t Bus::read(uint16_t address) const
     {
         return mCartridgePtr->read(address);
     }
-    else if (0x8000 <= address && address <= 0x9fff) // video ram
+    else if ((0x8000 <= address && address <= 0x9fff) or (0xfe00 <= address && address <= 0xfe9f)) // video ram or oam
     {
-        return mVram[address - 0x8000];
+        return mPPUPtr->read(address);
     }
     else if (0xc000 <= address && address <= 0xdfff) // wram
     {
@@ -46,10 +47,6 @@ uint8_t Bus::read(uint16_t address) const
     else if (0xe000 <= address && address <= 0xfdff) // echo ram (mirror of 0xc000 - 0xddff)
     {
         return mWram[address - 0xe000];
-    }
-    else if (0xfe00 <= address && address <= 0xfe9f) // oam
-    {
-        return mOam[address - 0xfe00];
     }
     else if (0xfea0 <= address && address <= 0xfeff) // not usable
     {
@@ -85,9 +82,9 @@ void Bus::write(uint16_t address, uint8_t value)
     {
         mCartridgePtr->write(address, value);
     }
-    else if (0x8000 <= address && address <= 0x9fff) // video ram
+    else if ((0x8000 <= address && address <= 0x9fff) or (0xfe00 <= address && address <= 0xfe9f)) // video ram or oam
     {
-        mVram[address - 0x8000] = value;
+        mPPUPtr->write(address, value);
     }
     else if (0xc000 <= address && address <= 0xdfff) // wram
     {
@@ -96,10 +93,6 @@ void Bus::write(uint16_t address, uint8_t value)
     else if (0xe000 <= address && address <= 0xfdff) // echo ram (mirror of 0xc000 - 0xddff)
     {
         mWram[address - 0xe000] = value;
-    }
-    else if (0xfe00 <= address && address <= 0xfe9f) // oam
-    {
-        mOam[address - 0xfe00] = value;
     }
     else if (0xfea0 <= address && address <= 0xfeff) // not usable
     {
