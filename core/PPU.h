@@ -35,6 +35,9 @@ public:
     void setFrameReady(bool frameReady);
 
 private:
+    void setMode(PPUMode mode);
+    void renderScanline();
+
     bool mIsFrameReady = true;
     uint8_t mLy = 0;
     uint8_t mLyc = 0;
@@ -51,5 +54,6 @@ private:
     std::array<uint8_t, 0x2000> mVram = {};
     std::array<uint8_t, 0xa0> mOam = {};
     std::array<uint8_t, kLcdHeight * kLcdWidth> mFrameBuffer = {};
+    PPUMode mMode = PPUMode::OamScan;
 };
 } // namespace qgb

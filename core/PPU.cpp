@@ -122,12 +122,56 @@ auto PPU::getFrameBuffer() const -> const std::array<uint8_t, kLcdHeight * kLcdW
 
 void PPU::tick(int tCycles)
 {
-    mDot += tCycles;
-    while (mDot > kDotsPerLine)
+    while (tCycles > 0)
     {
-        mDot -= kDotsPerLine;
-        mLy = (mLy + 1) % kLinesPerFrame;
+        tCycles--;
+
+        ++mDot;
+        if (mLy < kVBlankStart)
+        {
+            if (mDot == kOamScanDots)
+            {
+                setMode(PPUMode::Drawing);
+            }
+            else if (mDot == kOamScanDots + kDrawingDots)
+            {
+                renderScanline();
+                setMode(PPUMode::HBlank);
+            }
+        }
+
+        if (mDot == kDotsPerLine)
+        {
+            mDot = 0;
+            ++mLy;
+
+            if (mLy == kVBlankStart)
+            {
+                setMode(PPUMode::VBlank);
+                // TODO: request VBlank interrupt, signal "frame ready"
+            }
+            else if (mLy == kLinesPerFrame)
+            {
+                mLy = 0;
+                setMode(PPUMode::OamScan);
+            }
+            else if (mLy < kVBlankStart)
+            {
+                setMode(PPUMode::OamScan);
+            }
+            // lines 145-153 simply stay in VBlank
+        }
     }
+}
+
+void PPU::setMode(PPUMode mode)
+{
+    mMode = mode;
+}
+
+void PPU::renderScanline()
+{
+    // TODO: fill row ly of mRenderBuffer
 }
 
 bool PPU::isFrameReady() const
