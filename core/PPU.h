@@ -41,7 +41,6 @@ private:
     bool mIsFrameReady = true;
     uint8_t mLy = 0;
     uint8_t mLyc = 0;
-    uint8_t mStat = 0;
     uint8_t mScx{};
     uint8_t mScy{};
     uint8_t mBgp{};
@@ -51,6 +50,7 @@ private:
     uint8_t mWx{};
     uint8_t mWy{};
     int mDot{};
+    uint8_t mStatEnable{};
     std::array<uint8_t, 0x2000> mVram = {};
     std::array<uint8_t, 0xa0> mOam = {};
     std::array<uint8_t, kLcdHeight * kLcdWidth> mFrameBuffer = {};

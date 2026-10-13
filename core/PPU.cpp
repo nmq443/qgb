@@ -22,7 +22,12 @@ auto PPU::read(uint16_t address) const -> uint8_t
     }
     else if (0xff41 == address)
     {
-        return mStat;
+        uint8_t lycFlag = (mLy == mLyc) ? 0x04 : 0x00;
+        // bit 7 are always 1
+        // bit 3-6: game writable
+        // bit 2: lyc flag
+        // bit 0-1: ppu mode
+        return 0x80 | mStatEnable | lycFlag | static_cast<int>(mMode);
     }
     else if (0xff46 == address)
     {
@@ -71,7 +76,7 @@ void PPU::write(uint16_t address, uint8_t value)
     }
     else if (0xff44 == address)
     {
-        mLy = value;
+        // mLy = value; ly is read only
     }
     else if (0xff45 == address)
     {
@@ -79,7 +84,7 @@ void PPU::write(uint16_t address, uint8_t value)
     }
     else if (0xff41 == address)
     {
-        mStat = value;
+        mStatEnable = value & 0x78; // only bit 3-6 are writable
     }
     else if (0xff46 == address)
     {
