@@ -63,6 +63,10 @@ uint8_t Bus::read(uint16_t address) const
         {
             return mTimerPtr->read(address);
         }
+        else if (0xff40 <= address && address <= 0xff4b) // ppu's registers
+        {
+            return mPPUPtr->read(address);
+        }
         return mIoRegs[address - 0xff00];
     }
     else if (0xff80 <= address && address <= 0xfffe) // hram
@@ -107,6 +111,10 @@ void Bus::write(uint16_t address, uint8_t value)
         else if (0xff04 <= address && address <= 0xff07)
         {
             mTimerPtr->write(address, value);
+        }
+        else if (0xff40 <= address && address <= 0xff4b) // ppu's registers
+        {
+            mPPUPtr->write(address, value);
         }
         else
         {

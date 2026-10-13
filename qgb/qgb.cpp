@@ -9,7 +9,7 @@ int main()
     using namespace qgb;
 
     Emulator emu;
-    emu.load("../roms/instr_timing/instr_timing.gb");
+    emu.load("../roms/lyc/lyc.gb");
     emu.setSerialCallback([](char c)
                           { std::cout << c << std::flush; });
 
