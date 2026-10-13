@@ -179,6 +179,24 @@ void PPU::renderScanline()
     // TODO: fill row ly of mRenderBuffer
 }
 
+void PPU::updateStatLine()
+{
+    bool lycMatch = mLy == mLyc;
+    bool line = (lycMatch && (mStatEnable & 0x40)) or                  // bit 6
+                (mMode == PPUMode::OamScan && (mStatEnable & 0x20)) or // bit 5
+                (mMode == PPUMode::VBlank && (mStatEnable & 0x10)) or  // bit 4
+                (mMode == PPUMode::HBlank && (mStatEnable & 0x80));    // bit 3
+
+    if (line and !mPrevStatline)
+    {
+        if (mStatInterrupt)
+        {
+            mStatInterrupt();
+        }
+    }
+    mPrevStatline = line;
+}
+
 bool PPU::isFrameReady() const
 {
     return mIsFrameReady;
@@ -187,5 +205,10 @@ bool PPU::isFrameReady() const
 void PPU::setFrameReady(bool frameReady)
 {
     mIsFrameReady = frameReady;
+}
+
+void PPU::setStatInterrupt(const std::function<void()> &statInterrupt)
+{
+    mStatInterrupt = statInterrupt;
 }
 } // namespace qgb

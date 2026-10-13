@@ -3,6 +3,7 @@
 #include "IClockable.h"
 #include <array>
 #include <cstdint>
+#include <functional>
 
 namespace qgb
 {
@@ -33,12 +34,15 @@ public:
     auto getFrameBuffer() const -> const std::array<uint8_t, kLcdHeight * kLcdWidth> &;
     bool isFrameReady() const;
     void setFrameReady(bool frameReady);
+    void setStatInterrupt(const std::function<void()> &statInterrupt);
 
 private:
     void setMode(PPUMode mode);
     void renderScanline();
+    void updateStatLine();
 
-    bool mIsFrameReady = true;
+    bool mIsFrameReady{false};
+    bool mPrevStatline{false};
     uint8_t mLy = 0;
     uint8_t mLyc = 0;
     uint8_t mScx{};
@@ -55,5 +59,6 @@ private:
     std::array<uint8_t, 0xa0> mOam = {};
     std::array<uint8_t, kLcdHeight * kLcdWidth> mFrameBuffer = {};
     PPUMode mMode = PPUMode::OamScan;
+    std::function<void()> mStatInterrupt = nullptr;
 };
 } // namespace qgb

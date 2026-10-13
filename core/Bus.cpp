@@ -28,6 +28,11 @@ void Bus::init(Cartridge &cartridge, Timer &timer, PPU &ppu)
         raiseInterrupt(Interrupt::Timer);
     };
     mTimerPtr->setTimerInterrupt(timerInterrupt);
+
+    auto statInterrupt = [this]()
+    {
+        raiseInterrupt(Interrupt::Lcd);
+    };
 }
 
 uint8_t Bus::read(uint16_t address) const
