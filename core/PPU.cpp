@@ -20,6 +20,10 @@ auto PPU::read(uint16_t address) const -> uint8_t
     {
         return mLyc;
     }
+    else if (0xff40 == address)
+    {
+        return mLcdc;
+    }
     else if (0xff41 == address)
     {
         uint8_t lycFlag = (mLy == mLyc) ? 0x04 : 0x00;
@@ -82,6 +86,28 @@ void PPU::write(uint16_t address, uint8_t value)
     {
         mLyc = value;
     }
+    else if (0xff40 == address)
+    {
+        bool wasOn{(mLcdc & 0x80) > 0};
+        mLcdc = value;
+        bool isOn{(mLcdc & 0x80) > 0};
+
+        if (wasOn and !isOn)
+        {
+            // lcd turn off
+            mLy = 0;
+            mDot = 0;
+            mStatEnable = 0;
+            setMode(PPUMode::HBlank);
+            std::fill(std::begin(mFrameBuffer), std::end(mFrameBuffer), 0);
+        }
+        else if (!wasOn and isOn)
+        {
+            // lcd turn on: start fresh at line 0
+            mLy = 0;
+            mDot = 0;
+        }
+    }
     else if (0xff41 == address)
     {
         mStatEnable = value & 0x78; // only bit 3-6 are writable
@@ -127,6 +153,11 @@ auto PPU::getFrameBuffer() const -> const std::array<uint8_t, kLcdHeight * kLcdW
 
 void PPU::tick(int tCycles)
 {
+    if (!(mLcdc & 0x80)) // LCD off, do nothing
+    {
+        return;
+    }
+
     while (tCycles > 0)
     {
         tCycles--;

@@ -53,6 +53,7 @@ private:
     uint8_t mDma{};
     uint8_t mWx{};
     uint8_t mWy{};
+    uint8_t mLcdc{};
     int mDot{};
     uint8_t mStatEnable{};
     std::array<uint8_t, 0x2000> mVram = {};
