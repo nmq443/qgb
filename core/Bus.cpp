@@ -33,6 +33,13 @@ void Bus::init(Cartridge &cartridge, Timer &timer, PPU &ppu)
     {
         raiseInterrupt(Interrupt::Lcd);
     };
+    mPPUPtr->setStatInterrupt(statInterrupt);
+
+    auto vblankInterrupt = [this]()
+    {
+        raiseInterrupt(Interrupt::VBlank);
+    };
+    mPPUPtr->setVBlankInterrupt(vblankInterrupt);
 }
 
 uint8_t Bus::read(uint16_t address) const

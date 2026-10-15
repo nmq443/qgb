@@ -150,3 +150,213 @@ TEST_F(PPUTest, StatLycFlagFollowsComparison)
     ppu.tick(PPU::kDotsPerLine);          // LY becomes 2
     EXPECT_FALSE(ppu.read(kStat) & 0x04); // LY=2, LYC=1
 }
+
+TEST_F(PPUTest, TickDoesNothingWhileLcdOff)
+{
+    turnOff();
+    ppu.tick(PPU::kDotsPerLine * 10);
+    EXPECT_EQ(ly(), 0);
+    EXPECT_EQ(mode(), PPUMode::HBlank);
+}
+
+TEST_F(PPUTest, TurningLcdOffResetsLyAndMode)
+{
+    turnOn();
+    ppu.tick(PPU::kDotsPerLine * 5 + 100); // LY=5, somewhere in drawing
+    ASSERT_EQ(ly(), 5);
+
+    turnOff();
+    EXPECT_EQ(ly(), 0);
+    EXPECT_EQ(mode(), PPUMode::HBlank);
+    EXPECT_EQ(ppu.read(kLcdc) & 0x80, 0); // bit 7 reads back as 0
+}
+
+TEST_F(PPUTest, TurningLcdOffDoesNotClearStatInterruptEnables)
+{
+    // On hardware only the mode / LYC flag are reset; STAT enable bits are
+    // plain game-written state.
+    turnOn();
+    ppu.write(kStat, 0x78);
+    turnOff();
+    EXPECT_EQ(ppu.read(kStat) & 0x78, 0x78);
+}
+
+TEST_F(PPUTest, TurningLcdOffClearsFrameBuffer)
+{
+    turnOn();
+    ppu.tick(PPU::kDotsPerLine * 3);
+    turnOff();
+    const auto &fb = ppu.getFrameBuffer();
+    EXPECT_TRUE(std::all_of(fb.begin(), fb.end(), [](uint8_t p)
+                            { return p == 0; }));
+}
+
+TEST_F(PPUTest, TurningLcdOnRestartsAtLineZeroDotZero)
+{
+    turnOn();
+    ppu.tick(PPU::kDotsPerLine * 3 + 200);
+    turnOff();
+    turnOn();
+    EXPECT_EQ(ly(), 0);
+
+    // if mDot was properly reset, the first mode change is exactly at dot 80
+    ppu.tick(PPU::kOamScanDots - 1);
+    EXPECT_EQ(mode(), PPUMode::OamScan);
+    ppu.tick(1);
+    EXPECT_EQ(mode(), PPUMode::Drawing);
+}
+
+TEST_F(PPUTest, WritingLcdcWithBit7StillSetDoesNotRestartPpu)
+{
+    turnOn(0x01);
+    ppu.tick(PPU::kDotsPerLine * 2);
+    ASSERT_EQ(ly(), 2);
+    ppu.write(kLcdc, kLcdOn | 0x10); // change other bits, LCD stays on
+    EXPECT_EQ(ly(), 2);
+}
+
+TEST_F(PPUTest, ModeSequenceWithinVisibleLine)
+{
+    turnOn();
+    EXPECT_EQ(mode(), PPUMode::OamScan);
+
+    ppu.tick(PPU::kOamScanDots - 1);
+    EXPECT_EQ(mode(), PPUMode::OamScan);
+    ppu.tick(1);
+    EXPECT_EQ(mode(), PPUMode::Drawing);
+
+    ppu.tick(PPU::kDrawingDots - 1);
+    EXPECT_EQ(mode(), PPUMode::Drawing);
+    ppu.tick(1);
+    EXPECT_EQ(mode(), PPUMode::HBlank);
+
+    ppu.tick(PPU::kDotsPerLine - PPU::kOamScanDots - PPU::kDrawingDots - 1);
+    EXPECT_EQ(mode(), PPUMode::HBlank);
+    EXPECT_EQ(ly(), 0);
+
+    ppu.tick(1); // end of line
+    EXPECT_EQ(ly(), 1);
+    EXPECT_EQ(mode(), PPUMode::OamScan);
+}
+
+TEST_F(PPUTest, EntersVBlankAtLine144)
+{
+    turnOn();
+    ppu.tick(PPU::kDotsPerLine * PPU::kVBlankStart - 1);
+    EXPECT_EQ(ly(), 143);
+    EXPECT_EQ(mode(), PPUMode::HBlank);
+
+    ppu.tick(1);
+    EXPECT_EQ(ly(), 144);
+    EXPECT_EQ(mode(), PPUMode::VBlank);
+}
+
+TEST_F(PPUTest, StaysInVBlankThroughLine153)
+{
+    turnOn();
+    ppu.tick(PPU::kVBlankStart * PPU::kDotsPerLine); // Fast-forward to line 144
+    for (int line = PPU::kVBlankStart; line < PPU::kLinesPerFrame; ++line)
+    {
+        SCOPED_TRACE(line);
+        ASSERT_EQ(ly(), line);
+        // sample at several points of the line; mode must never change
+        EXPECT_EQ(mode(), PPUMode::VBlank);
+        ppu.tick(PPU::kOamScanDots);
+        EXPECT_EQ(mode(), PPUMode::VBlank);
+        ppu.tick(PPU::kDotsPerLine - PPU::kOamScanDots - 1);
+        EXPECT_EQ(mode(), PPUMode::VBlank);
+        ppu.tick(1);
+    }
+}
+
+TEST_F(PPUTest, FrameWrapsBackToLineZero)
+{
+    turnOn();
+    ppu.tick(PPU::kDotsPerLine * PPU::kLinesPerFrame - 1);
+    EXPECT_EQ(ly(), 153);
+    ppu.tick(1);
+    EXPECT_EQ(ly(), 0);
+    EXPECT_EQ(mode(), PPUMode::OamScan);
+}
+
+TEST_F(PPUTest, TwoFramesBehaveIdentically)
+{
+    turnOn();
+    ppu.tick(PPU::kDotsPerLine * PPU::kLinesPerFrame * 2 + 10);
+    EXPECT_EQ(ly(), 0);
+    EXPECT_EQ(mode(), PPUMode::OamScan);
+}
+
+TEST_F(PPUTest, TickInSmallStepsMatchesOneBigTick)
+{
+    PPU other;
+    other.write(kLcdc, 0x91);
+    turnOn(0x11);
+
+    const int total = PPU::kDotsPerLine * 50 + 123;
+    ppu.tick(total);
+    for (int i = 0; i < total; ++i)
+    {
+        other.tick(1);
+    }
+    EXPECT_EQ(ppu.read(kLy), other.read(kLy));
+    EXPECT_EQ(ppu.read(kStat), other.read(kStat));
+}
+
+TEST_F(PPUTest, TickZeroIsNoOp)
+{
+    turnOn();
+    ppu.tick(0);
+    EXPECT_EQ(ly(), 0);
+    EXPECT_EQ(mode(), PPUMode::OamScan);
+}
+
+TEST_F(PPUTest, FrameReadyFlagGetterSetter)
+{
+    EXPECT_FALSE(ppu.isFrameReady());
+    ppu.setFrameReady(true);
+    EXPECT_TRUE(ppu.isFrameReady());
+    ppu.setFrameReady(false);
+    EXPECT_FALSE(ppu.isFrameReady());
+}
+
+TEST_F(PPUTest, FrameBufferHasExpectedSize)
+{
+    EXPECT_EQ(ppu.getFrameBuffer().size(),
+              static_cast<size_t>(PPU::kLcdWidth * PPU::kLcdHeight));
+}
+
+TEST_F(PPUTest, FrameReadyIsSetWhenVBlankStarts)
+{
+    turnOn();
+    ppu.tick(PPU::kDotsPerLine * PPU::kVBlankStart - 1);
+    EXPECT_FALSE(ppu.isFrameReady());
+    ppu.tick(1);
+    EXPECT_TRUE(ppu.isFrameReady());
+}
+
+TEST_F(PPUTest, StatInterruptFiresOnLycMatch)
+{
+    int count = 0;
+    ppu.setStatInterrupt([&]
+                         { ++count; });
+    turnOn();
+    ppu.write(kStat, 0x40); // LYC interrupt enable
+    ppu.write(kLyc, 2);
+
+    ppu.tick(PPU::kDotsPerLine * 2);
+    EXPECT_EQ(count, 1);
+    ppu.tick(PPU::kDotsPerLine); // LY=3, no new edge
+    EXPECT_EQ(count, 1);
+}
+
+TEST_F(PPUTest, StatInterruptFiresOnHBlank)
+{
+    int count = 0;
+    ppu.setStatInterrupt([&]
+                         { ++count; });
+    turnOn();
+    ppu.write(kStat, 0x08); // mode 0 interrupt enable
+    ppu.tick(PPU::kOamScanDots + PPU::kDrawingDots);
+    EXPECT_EQ(count, 1);
+}

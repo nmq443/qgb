@@ -35,6 +35,7 @@ public:
     bool isFrameReady() const;
     void setFrameReady(bool frameReady);
     void setStatInterrupt(const std::function<void()> &statInterrupt);
+    void setVBlankInterrupt(const std::function<void()> &vblankInterrupt);
 
 private:
     void setMode(PPUMode mode);
@@ -59,7 +60,8 @@ private:
     std::array<uint8_t, 0x2000> mVram = {};
     std::array<uint8_t, 0xa0> mOam = {};
     std::array<uint8_t, kLcdHeight * kLcdWidth> mFrameBuffer = {};
-    PPUMode mMode = PPUMode::OamScan;
+    PPUMode mMode = PPUMode::HBlank;
     std::function<void()> mStatInterrupt = nullptr;
+    std::function<void()> mVBlankInterrupt = nullptr;
 };
 } // namespace qgb

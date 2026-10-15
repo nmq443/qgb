@@ -97,7 +97,6 @@ void PPU::write(uint16_t address, uint8_t value)
             // lcd turn off
             mLy = 0;
             mDot = 0;
-            mStatEnable = 0;
             setMode(PPUMode::HBlank);
             std::fill(std::begin(mFrameBuffer), std::end(mFrameBuffer), 0);
         }
@@ -106,6 +105,7 @@ void PPU::write(uint16_t address, uint8_t value)
             // lcd turn on: start fresh at line 0
             mLy = 0;
             mDot = 0;
+            setMode(PPUMode::OamScan);
         }
     }
     else if (0xff41 == address)
@@ -153,6 +153,7 @@ auto PPU::getFrameBuffer() const -> const std::array<uint8_t, kLcdHeight * kLcdW
 
 void PPU::tick(int tCycles)
 {
+    mIsFrameReady = false;
     if (!(mLcdc & 0x80)) // LCD off, do nothing
     {
         return;
@@ -173,6 +174,7 @@ void PPU::tick(int tCycles)
             {
                 renderScanline();
                 setMode(PPUMode::HBlank);
+                updateStatLine();
             }
         }
 
@@ -180,11 +182,16 @@ void PPU::tick(int tCycles)
         {
             mDot = 0;
             ++mLy;
+            updateStatLine();
 
             if (mLy == kVBlankStart)
             {
                 setMode(PPUMode::VBlank);
-                // TODO: request VBlank interrupt, signal "frame ready"
+                if (mVBlankInterrupt)
+                {
+                    mVBlankInterrupt();
+                }
+                mIsFrameReady = true;
             }
             else if (mLy == kLinesPerFrame)
             {
@@ -216,7 +223,7 @@ void PPU::updateStatLine()
     bool line = (lycMatch && (mStatEnable & 0x40)) or                  // bit 6
                 (mMode == PPUMode::OamScan && (mStatEnable & 0x20)) or // bit 5
                 (mMode == PPUMode::VBlank && (mStatEnable & 0x10)) or  // bit 4
-                (mMode == PPUMode::HBlank && (mStatEnable & 0x80));    // bit 3
+                (mMode == PPUMode::HBlank && (mStatEnable & 0x08));    // bit 3
 
     if (line and !mPrevStatline)
     {
@@ -241,5 +248,10 @@ void PPU::setFrameReady(bool frameReady)
 void PPU::setStatInterrupt(const std::function<void()> &statInterrupt)
 {
     mStatInterrupt = statInterrupt;
+}
+
+void PPU::setVBlankInterrupt(const std::function<void()> &vblankInterrupt)
+{
+    mVBlankInterrupt = vblankInterrupt;
 }
 } // namespace qgb
