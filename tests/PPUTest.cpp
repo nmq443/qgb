@@ -360,3 +360,22 @@ TEST_F(PPUTest, StatInterruptFiresOnHBlank)
     ppu.tick(PPU::kOamScanDots + PPU::kDrawingDots);
     EXPECT_EQ(count, 1);
 }
+
+TEST_F(PPUTest, StatInterruptIsEdgeTriggered)
+{
+    int count = 0;
+    ppu.setStatInterrupt([&]
+                         { ++count; });
+    turnOn();
+    ppu.write(kStat, 0x10);                            // VBlank interrupt enable
+    ppu.tick(PPU::kDotsPerLine * PPU::kLinesPerFrame); // whole VBlank period
+    EXPECT_EQ(count, 1);                               // fires once on entering VBlank, not every tick
+}
+
+TEST_F(PPUTest, NullStatCallbackDoesNotCrash)
+{
+    // this test exists because i do not wire any stat callback into ppu
+    turnOn();
+    ppu.write(kStat, 0x78);
+    EXPECT_NO_FATAL_FAILURE(ppu.tick(PPU::kDotsPerLine * PPU::kLinesPerFrame));
+}
