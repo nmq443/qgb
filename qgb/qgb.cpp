@@ -4,7 +4,7 @@
 #include <SDL3/SDL_main.h>
 #include <iostream>
 
-int main()
+int main(int, char *[])
 {
     using namespace qgb;
 
@@ -76,4 +76,6 @@ int main()
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
+
+    return 0;
 }
