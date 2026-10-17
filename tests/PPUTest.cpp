@@ -380,3 +380,65 @@ TEST_F(PPUTest, NullStatCallbackDoesNotCrash)
     ppu.write(kStat, 0x78);
     EXPECT_NO_FATAL_FAILURE(ppu.tick(PPU::kDotsPerLine * PPU::kLinesPerFrame));
 }
+
+TEST_F(PPUTest, AllZerosResultsInBlankTile)
+{
+    uint8_t data[16] = {0}; // 16 bytes of zeros
+    Tile tile{PPU::decodeTile(data)};
+
+    for (int row = 0; row < 8; ++row)
+    {
+        for (int col = 0; col < 8; ++col)
+        {
+            EXPECT_EQ(tile[row][col], 0);
+        }
+    }
+}
+
+TEST_F(PPUTest, AllOnesResultsInMaxTileValue)
+{
+    uint8_t data[16]{};
+    for (int i = 0; i < 16; ++i)
+    {
+        data[i] = 0xFF; // All bits set to 1 (both lo and hi planes active)
+    }
+
+    Tile tile{PPU::decodeTile(data)};
+
+    for (int row = 0; row < 8; ++row)
+    {
+        for (int col = 0; col < 8; ++col)
+        {
+            // hi=1, lo=1 -> (1 << 1) | 1 = 3
+            EXPECT_EQ(tile[row][col], 3);
+        }
+    }
+}
+
+TEST_F(PPUTest, CorrectBitPlaneCombination)
+{
+    uint8_t data[16]{0};
+
+    // Set up Row 0 only:
+    // lo = 0xAA (binary: 10101010) -> pixels at cols 0, 2, 4, 6 get low bit = 1
+    // hi = 0x55 (binary: 01010101) -> pixels at cols 1, 3, 5, 7 get high bit = 1
+    data[0] = 0xAA;
+    data[1] = 0x55;
+
+    Tile tile{PPU::decodeTile(data)};
+
+    // Column 0: bit 7 -> hi=0, lo=1 -> Value 1
+    EXPECT_EQ(tile[0][0], 1);
+    // Column 1: bit 6 -> hi=1, lo=0 -> Value 2
+    EXPECT_EQ(tile[0][1], 2);
+    // Column 2: bit 5 -> hi=0, lo=1 -> Value 1
+    EXPECT_EQ(tile[0][2], 1);
+    // Column 3: bit 4 -> hi=1, lo=0 -> Value 2
+    EXPECT_EQ(tile[0][3], 2);
+
+    // Unmodified rows (Row 1) should remain 0
+    for (int col = 0; col < 8; ++col)
+    {
+        EXPECT_EQ(tile[1][col], 0);
+    }
+}

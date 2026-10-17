@@ -39,12 +39,12 @@ public:
     void setStatInterrupt(const std::function<void()> &statInterrupt);
     void setVBlankInterrupt(const std::function<void()> &vblankInterrupt);
 
+    static Tile decodeTile(const uint8_t *data);
+
 private:
     void setMode(PPUMode mode);
     void renderScanline();
     void updateStatLine();
-
-    static Tile decodeTile(const uint8_t *data);
 
     bool mIsFrameReady{false};
     bool mPrevStatline{false};
