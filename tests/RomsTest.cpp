@@ -22,30 +22,20 @@ const std::vector<std::filesystem::path> kROMPaths = {
 
 static std::string runRomUntilResult(const std::filesystem::path &romPath)
 {
-    Cartridge cartridge;
-    EXPECT_NO_THROW(cartridge.load(romPath));
-    Timer timer;
-    Clock clock;
-    Bus bus;
-    bus.init(cartridge, timer);
-    CPU cpu;
-    cpu.init(bus, clock);
-
-    clock.addDevice(timer);
-
     std::string output;
     constexpr int maxSteps = 10'000'000;
 
+    Emulator emu;
+    emu.setSerialCallback([&](char c)
+                          { output += c; });
+    EXPECT_NO_THROW(emu.load(romPath));
+
     for (int i = 0; i < maxSteps; ++i)
     {
-        cpu.step();
-
-        if (bus.read(0xff02) == 0x81)
+        emu.step();
+        if (output.contains("Passed") or output.contains("Failed"))
         {
-            char c = static_cast<char>(bus.read(0xff01));
-            output += c;
-
-            bus.write(0xFF02, 0x00);
+            break;
         }
     }
 
