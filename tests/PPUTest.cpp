@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <core/PPU.h>
 #include <gtest/gtest.h>
 
