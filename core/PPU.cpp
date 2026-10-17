@@ -265,8 +265,10 @@ Tile PPU::decodeTile(const uint8_t *data)
         uint8_t hi = data[row * 2 + 1];
         for (int col{}; col < 8; ++col)
         {
-            int bit{7 - col};
-            tile[row][col] = (((hi >> bit) & 1) << 1) | ((lo >> bit) & 1);
+            int bit{7 - col}; // current bit index
+            int higherBitOfCurrentPixel{(hi >> bit) & 1};
+            int lowerBitOfCurrentPixel{(lo >> bit) & 1};
+            tile[row][col] = (higherBitOfCurrentPixel << 1) | lowerBitOfCurrentPixel;
         }
     }
 
