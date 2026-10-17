@@ -15,6 +15,8 @@ enum class PPUMode
     Drawing
 };
 
+using Tile = std::array<std::array<uint8_t, 8>, 8>;
+
 class PPU : public IClockable
 {
 public:
@@ -41,6 +43,8 @@ private:
     void setMode(PPUMode mode);
     void renderScanline();
     void updateStatLine();
+
+    static Tile decodeTile(const uint8_t *data);
 
     bool mIsFrameReady{false};
     bool mPrevStatline{false};
