@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <core/PPU.h>
+#include <core/Utils.h>
 #include <gtest/gtest.h>
 
 using namespace qgb;
@@ -441,4 +442,26 @@ TEST_F(PPUTest, CorrectBitPlaneCombination)
     {
         EXPECT_EQ(tile[1][col], 0);
     }
+}
+
+TEST_F(PPUTest, TileDataAddressUnsignedMode_0x8000)
+{
+    // 0x8000 - 0x8FFF range
+    turnOn(setBit(1, static_cast<uint8_t>(LCDC::BgAndWindowTiles), true));
+
+    EXPECT_EQ(ppu.tileDataAddress(0), 0x8000);
+    EXPECT_EQ(ppu.tileDataAddress(1), 0x8010);
+    EXPECT_EQ(ppu.tileDataAddress(255), 0x8FF0);
+}
+
+TEST_F(PPUTest, TileDataAddressSignedMode_0x8800)
+{
+    // 0x8800 - 0x97FF range
+    turnOn(setBit(1, static_cast<uint8_t>(LCDC::BgAndWindowTiles), false));
+
+    EXPECT_EQ(ppu.tileDataAddress(0), 0x9000);
+    EXPECT_EQ(ppu.tileDataAddress(1), 0x9010);
+    EXPECT_EQ(ppu.tileDataAddress(127), 0x97F0);                       // Max positive offset
+    EXPECT_EQ(ppu.tileDataAddress(static_cast<int8_t>(-1)), 0x8FF0);   // -1 wraps into 0x8800 block
+    EXPECT_EQ(ppu.tileDataAddress(static_cast<int8_t>(-128)), 0x8800); // Min negative offset
 }

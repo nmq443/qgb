@@ -15,6 +15,18 @@ enum class PPUMode
     Drawing
 };
 
+enum class LCDC
+{
+    BgAndWindowEnable,
+    ObjEnable,
+    ObjSize,
+    BgTilemap,
+    BgAndWindowTiles,
+    WindowEnable,
+    WindowTilemap,
+    LcdAndPPUEnable
+};
+
 using Tile = std::array<std::array<uint8_t, 8>, 8>;
 
 class PPU : public IClockable
@@ -38,8 +50,9 @@ public:
     void setFrameReady(bool frameReady);
     void setStatInterrupt(const std::function<void()> &statInterrupt);
     void setVBlankInterrupt(const std::function<void()> &vblankInterrupt);
+    auto tileDataAddress(int tileId) const -> uint16_t;
 
-    static Tile decodeTile(const uint8_t *data);
+    static auto decodeTile(const uint8_t *data) -> Tile;
 
 private:
     void setMode(PPUMode mode);

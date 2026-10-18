@@ -1,4 +1,5 @@
 #include "PPU.h"
+#include "Utils.h"
 
 namespace qgb
 {
@@ -255,7 +256,7 @@ void PPU::setVBlankInterrupt(const std::function<void()> &vblankInterrupt)
     mVBlankInterrupt = vblankInterrupt;
 }
 
-Tile PPU::decodeTile(const uint8_t *data)
+auto PPU::decodeTile(const uint8_t *data) -> Tile
 {
     Tile tile{};
 
@@ -273,5 +274,21 @@ Tile PPU::decodeTile(const uint8_t *data)
     }
 
     return tile;
+}
+
+auto PPU::tileDataAddress(int tileId) const -> uint16_t
+{
+    uint16_t address{};
+    if (getBit(mLcdc, static_cast<uint8_t>(LCDC::BgAndWindowTiles))) // 0x8000 - 0x8fff
+    {
+        // unsigned
+        return 0x8000 + tileId * 16; // 1 tile is 16 bytes
+    }
+    else // 0x8800 - 0x97ff
+    {
+        // signed
+        return 0x9000 + static_cast<int8_t>(tileId) * 16; // 1 tile is 16 bytes
+    }
+    return address;
 }
 } // namespace qgb
