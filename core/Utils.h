@@ -22,6 +22,23 @@ uint16_t makeWord(uint8_t high, uint8_t low);
 std::pair<uint8_t, uint8_t> makeBytes(uint16_t word);
 
 /**
+ * @brief Get status of a bit of a value
+ * @param num Target number
+ * @param bit Target bit
+ * @return Status of the bit
+ */
+auto getBit(uint8_t num, uint8_t bit) -> bool;
+
+/**
+ * @brief Set status of a bit of a value
+ * @param num Target number
+ * @param bit Target bit
+ * @param bit Status on or off
+ * @return Value after setting bit status
+ */
+auto setBit(uint8_t num, uint8_t bit, bool status) -> uint8_t;
+
+/**
  * @brief Get ROM from a binary file
  * @param filepath
  * @return
