@@ -215,7 +215,44 @@ void PPU::setMode(PPUMode mode)
 
 void PPU::renderScanline()
 {
-    // TODO: fill row ly of mRenderBuffer
+    if (!getBit(mLcdc, static_cast<uint8_t>(LCDC::BgAndWindowEnable)))
+    {
+        for (int x{}; x < kLcdWidth; ++x)
+        {
+            mFrameBuffer[mLy * kLcdWidth + x] = 0;
+        }
+        return;
+    }
+
+    uint16_t mapBase{getBgTilemapAddr()};             // background's tilemap start address
+    uint8_t rowInTile{static_cast<uint8_t>(mLy % 8)}; // current row (0-7) in the tile
+
+    for (int colInTile{}; colInTile < kLcdWidth; ++colInTile)
+    {
+        // Get tile coordinate on the screen based on current pixel (x, ly)
+        uint8_t tileRow{static_cast<uint8_t>(mLy / 8)};
+        uint8_t tileCol{static_cast<uint8_t>(colInTile / 8)};
+
+        // Get tilemap address: base's address + tilemap offset
+        // Since the tiles in tilemap is saved as a 1d array
+        // We need to convert from 2d -> 1d coordinates
+        // Using formula: index = row * WIDTH + col
+        uint16_t mapAddr{static_cast<uint16_t>(mapBase + tileRow * kLcdWidth + tileCol)};
+
+        // Each tile map contains the 1-byte indexes of the tiles to be displayed.
+        // Not the data itself.
+        uint8_t tileId{read(mapAddr)};
+
+        // Based on the tile index, we get the tile address
+        uint16_t tileAddr{getTileDataAddress(tileId)};
+
+        // Create a tile structure from raw 16 bytes
+        Tile tile{decodeTile(tileAddr)};
+
+        // Then assign each pixel
+        uint8_t colorIndex{tile[rowInTile][colInTile % 8]};
+        mFrameBuffer[mLy * kLcdWidth + colInTile] = colorIndex;
+    }
 }
 
 void PPU::updateStatLine()
@@ -256,14 +293,15 @@ void PPU::setVBlankInterrupt(const std::function<void()> &vblankInterrupt)
     mVBlankInterrupt = vblankInterrupt;
 }
 
-auto PPU::decodeTile(const uint8_t *data) -> Tile
+auto PPU::decodeTile(uint16_t tileAddr) const -> Tile
 {
     Tile tile{};
 
     for (int row{}; row < 8; ++row)
     {
-        uint8_t lo = data[row * 2];
-        uint8_t hi = data[row * 2 + 1];
+        uint16_t rowAddress = tileAddr + (row * 2);
+        uint8_t lo = read(rowAddress);
+        uint8_t hi = read(rowAddress + 1);
         for (int col{}; col < 8; ++col)
         {
             int bit{7 - col}; // current bit index
@@ -276,9 +314,9 @@ auto PPU::decodeTile(const uint8_t *data) -> Tile
     return tile;
 }
 
-auto PPU::tileDataAddress(int tileId) const -> uint16_t
+auto PPU::getTileDataAddress(int tileId) const -> uint16_t
 {
-    uint16_t address{};
+    uint16_t address{};                                              // tile address = based address + index * sizeof(a signle tile which is 16 bytes)
     if (getBit(mLcdc, static_cast<uint8_t>(LCDC::BgAndWindowTiles))) // 0x8000 - 0x8fff
     {
         // unsigned
@@ -290,5 +328,11 @@ auto PPU::tileDataAddress(int tileId) const -> uint16_t
         return 0x9000 + static_cast<int8_t>(tileId) * 16; // 1 tile is 16 bytes
     }
     return address;
+}
+
+auto PPU::getBgTilemapAddr() const -> uint16_t
+{
+    // lcdc bit 3 = 0 then 0x9800-0x9BFF, otherwise 0x9C00-0x9FFF
+    return getBit(mLcdc, static_cast<uint8_t>(LCDC::BgTilemap)) ? 0x9c00 : 0x9800;
 }
 } // namespace qgb

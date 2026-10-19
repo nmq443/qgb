@@ -384,8 +384,13 @@ TEST_F(PPUTest, NullStatCallbackDoesNotCrash)
 
 TEST_F(PPUTest, AllZerosResultsInBlankTile)
 {
-    uint8_t data[16] = {0}; // 16 bytes of zeros
-    Tile tile{PPU::decodeTile(data)};
+    uint16_t tileAddr = 0x8000;
+    for (int i = 0; i < 16; ++i)
+    {
+        ppu.write(tileAddr + i, 0); // Fill 16 bytes with zeros in VRAM
+    }
+
+    Tile tile{ppu.decodeTile(tileAddr)};
 
     for (int row = 0; row < 8; ++row)
     {
@@ -398,46 +403,43 @@ TEST_F(PPUTest, AllZerosResultsInBlankTile)
 
 TEST_F(PPUTest, AllOnesResultsInMaxTileValue)
 {
-    uint8_t data[16]{};
+    uint16_t tileAddr = 0x8000;
     for (int i = 0; i < 16; ++i)
     {
-        data[i] = 0xFF; // All bits set to 1 (both lo and hi planes active)
+        ppu.write(tileAddr + i, 0xFF); // All bits set to 1
     }
 
-    Tile tile{PPU::decodeTile(data)};
+    Tile tile{ppu.decodeTile(tileAddr)};
 
     for (int row = 0; row < 8; ++row)
     {
         for (int col = 0; col < 8; ++col)
         {
-            // hi=1, lo=1 -> (1 << 1) | 1 = 3
-            EXPECT_EQ(tile[row][col], 3);
+            EXPECT_EQ(tile[row][col], 3); // 0b0000'0011
         }
     }
 }
 
 TEST_F(PPUTest, CorrectBitPlaneCombination)
 {
-    uint8_t data[16]{0};
+    uint16_t tileAddr = 0x8000;
+    for (int i = 0; i < 16; ++i)
+    {
+        ppu.write(tileAddr + i, 0); // Clear tile bytes
+    }
 
     // Set up Row 0 only:
-    // lo = 0xAA (binary: 10101010) -> pixels at cols 0, 2, 4, 6 get low bit = 1
-    // hi = 0x55 (binary: 01010101) -> pixels at cols 1, 3, 5, 7 get high bit = 1
-    data[0] = 0xAA;
-    data[1] = 0x55;
+    ppu.write(tileAddr + 0, 0xAA); // lo = 0xAA (binary: 10101010)
+    ppu.write(tileAddr + 1, 0x55); // hi = 0x55 (binary: 01010101)
 
-    Tile tile{PPU::decodeTile(data)};
+    Tile tile{ppu.decodeTile(tileAddr)};
 
-    // Column 0: bit 7 -> hi=0, lo=1 -> Value 1
-    EXPECT_EQ(tile[0][0], 1);
-    // Column 1: bit 6 -> hi=1, lo=0 -> Value 2
-    EXPECT_EQ(tile[0][1], 2);
-    // Column 2: bit 5 -> hi=0, lo=1 -> Value 1
-    EXPECT_EQ(tile[0][2], 1);
-    // Column 3: bit 4 -> hi=1, lo=0 -> Value 2
-    EXPECT_EQ(tile[0][3], 2);
+    EXPECT_EQ(tile[0][0], 1); // bit 7: hi=0, lo=1
+    EXPECT_EQ(tile[0][1], 2); // bit 6: hi=1, lo=0
+    EXPECT_EQ(tile[0][2], 1); // bit 5: hi=0, lo=1
+    EXPECT_EQ(tile[0][3], 2); // bit 4: hi=1, lo=0
 
-    // Unmodified rows (Row 1) should remain 0
+    // Unmodified rows should remain 0
     for (int col = 0; col < 8; ++col)
     {
         EXPECT_EQ(tile[1][col], 0);
@@ -449,9 +451,9 @@ TEST_F(PPUTest, TileDataAddressUnsignedMode_0x8000)
     // 0x8000 - 0x8FFF range
     turnOn(setBit(1, static_cast<uint8_t>(LCDC::BgAndWindowTiles), true));
 
-    EXPECT_EQ(ppu.tileDataAddress(0), 0x8000);
-    EXPECT_EQ(ppu.tileDataAddress(1), 0x8010);
-    EXPECT_EQ(ppu.tileDataAddress(255), 0x8FF0);
+    EXPECT_EQ(ppu.getTileDataAddress(0), 0x8000);
+    EXPECT_EQ(ppu.getTileDataAddress(1), 0x8010);
+    EXPECT_EQ(ppu.getTileDataAddress(255), 0x8FF0);
 }
 
 TEST_F(PPUTest, TileDataAddressSignedMode_0x8800)
@@ -459,9 +461,9 @@ TEST_F(PPUTest, TileDataAddressSignedMode_0x8800)
     // 0x8800 - 0x97FF range
     turnOn(setBit(1, static_cast<uint8_t>(LCDC::BgAndWindowTiles), false));
 
-    EXPECT_EQ(ppu.tileDataAddress(0), 0x9000);
-    EXPECT_EQ(ppu.tileDataAddress(1), 0x9010);
-    EXPECT_EQ(ppu.tileDataAddress(127), 0x97F0);                       // Max positive offset
-    EXPECT_EQ(ppu.tileDataAddress(static_cast<int8_t>(-1)), 0x8FF0);   // -1 wraps into 0x8800 block
-    EXPECT_EQ(ppu.tileDataAddress(static_cast<int8_t>(-128)), 0x8800); // Min negative offset
+    EXPECT_EQ(ppu.getTileDataAddress(0), 0x9000);
+    EXPECT_EQ(ppu.getTileDataAddress(1), 0x9010);
+    EXPECT_EQ(ppu.getTileDataAddress(127), 0x97F0);                       // Max positive offset
+    EXPECT_EQ(ppu.getTileDataAddress(static_cast<int8_t>(-1)), 0x8FF0);   // -1 wraps into 0x8800 block
+    EXPECT_EQ(ppu.getTileDataAddress(static_cast<int8_t>(-128)), 0x8800); // Min negative offset
 }

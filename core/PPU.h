@@ -50,9 +50,9 @@ public:
     void setFrameReady(bool frameReady);
     void setStatInterrupt(const std::function<void()> &statInterrupt);
     void setVBlankInterrupt(const std::function<void()> &vblankInterrupt);
-    auto tileDataAddress(int tileId) const -> uint16_t;
-
-    static auto decodeTile(const uint8_t *data) -> Tile;
+    auto getTileDataAddress(int tileId) const -> uint16_t;
+    auto getBgTilemapAddr() const -> uint16_t;
+    auto decodeTile(uint16_t tileAddr) const -> Tile;
 
 private:
     void setMode(PPUMode mode);
