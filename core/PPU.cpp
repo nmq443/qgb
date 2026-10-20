@@ -224,20 +224,23 @@ void PPU::renderScanline()
         return;
     }
 
-    uint16_t mapBase{getBgTilemapAddr()};             // background's tilemap start address
-    uint8_t rowInTile{static_cast<uint8_t>(mLy % 8)}; // current row (0-7) in the tile
+    uint16_t mapBase{getBgTilemapAddr()}; // background's tilemap start address
 
-    for (int colInTile{}; colInTile < kLcdWidth; ++colInTile)
+    for (int x{}; x < kLcdWidth; ++x)
     {
+        // Transform from screen coordinate to tilemap coordinate
+        uint8_t mapX{static_cast<uint8_t>(x + mScx)};
+        uint8_t mapY{static_cast<uint8_t>(mLy + mScy)};
+
         // Get tile coordinate on the screen based on current pixel (x, ly)
-        uint8_t tileRow{static_cast<uint8_t>(mLy / 8)};
-        uint8_t tileCol{static_cast<uint8_t>(colInTile / 8)};
+        uint8_t tileRow{static_cast<uint8_t>(mapY / 8)};
+        uint8_t tileCol{static_cast<uint8_t>(mapX / 8)};
 
         // Get tilemap address: base's address + tilemap offset
         // Since the tiles in tilemap is saved as a 1d array
         // We need to convert from 2d -> 1d coordinates
         // Using formula: index = row * WIDTH + col
-        uint16_t mapAddr{static_cast<uint16_t>(mapBase + tileRow * kLcdWidth + tileCol)};
+        uint16_t mapAddr{static_cast<uint16_t>(mapBase + tileRow * 32 + tileCol)}; // 1 tile is 32 bytes in size
 
         // Each tile map contains the 1-byte indexes of the tiles to be displayed.
         // Not the data itself.
@@ -250,8 +253,10 @@ void PPU::renderScanline()
         Tile tile{decodeTile(tileAddr)};
 
         // Then assign each pixel
-        uint8_t colorIndex{tile[rowInTile][colInTile % 8]};
-        mFrameBuffer[mLy * kLcdWidth + colInTile] = colorIndex;
+        uint8_t pixelX{static_cast<uint8_t>(mapX % 8)};
+        uint8_t pixelY{static_cast<uint8_t>(mapY % 8)};
+        uint8_t colorIndex{tile[pixelY][pixelX]};
+        mFrameBuffer[mLy * kLcdWidth + x] = colorIndex;
     }
 }
 
