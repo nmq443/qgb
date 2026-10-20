@@ -256,7 +256,8 @@ void PPU::renderScanline()
         uint8_t pixelX{static_cast<uint8_t>(mapX % 8)};
         uint8_t pixelY{static_cast<uint8_t>(mapY % 8)};
         uint8_t colorIndex{tile[pixelY][pixelX]};
-        mFrameBuffer[mLy * kLcdWidth + x] = colorIndex;
+        uint8_t shade{static_cast<uint8_t>((mBgp >> (colorIndex * 2)) & 0x03)};
+        mFrameBuffer[mLy * kLcdWidth + x] = shade;
     }
 }
 
