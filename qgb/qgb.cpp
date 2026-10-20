@@ -21,7 +21,7 @@ int main(int, char *[])
 
     constexpr int WIDTH = PPU::kLcdWidth;
     constexpr int HEIGHT = PPU::kLcdHeight;
-    constexpr int SCALE = 8;
+    constexpr int SCALE = 5;
 
     std::array<uint32_t, WIDTH * HEIGHT> pixels; // converted ARGB
     constexpr uint32_t SHADES[4] = {0xFFE0F8D0, 0xFF88C070, 0xFF346856, 0xFF081820};
@@ -57,6 +57,7 @@ int main(int, char *[])
         {
             emu.step();
         }
+        emu.getPPU().setFrameReady(false); // consume the flag
 
         const auto &frameBuffer = emu.getPPU().getFrameBuffer();
         for (size_t i = 0; i < frameBuffer.size(); ++i)

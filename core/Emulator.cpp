@@ -59,4 +59,9 @@ auto Emulator::getPPU() const -> const PPU &
     return mPPU;
 }
 
+auto Emulator::getPPU() -> PPU &
+{
+    return mPPU;
+}
+
 } // namespace qgb

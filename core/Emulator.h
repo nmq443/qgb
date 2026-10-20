@@ -19,6 +19,7 @@ public:
     void step();
     void setSerialCallback(SerialCallback cb);
     auto getPPU() const -> const PPU &;
+    auto getPPU() -> PPU &;
 
 private:
     void pollSerial();
