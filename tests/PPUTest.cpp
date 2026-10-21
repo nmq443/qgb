@@ -467,3 +467,112 @@ TEST_F(PPUTest, TileDataAddressSignedMode_0x8800)
     EXPECT_EQ(ppu.getTileDataAddress(static_cast<int8_t>(-1)), 0x8FF0);   // -1 wraps into 0x8800 block
     EXPECT_EQ(ppu.getTileDataAddress(static_cast<int8_t>(-128)), 0x8800); // Min negative offset
 }
+
+TEST_F(PPUTest, RenderScanline_BackgroundDisabled_FillsZero)
+{
+    // LCDC: Bit 7 ON (LCD Enabled), Bit 0 OFF (Bg/Window Disabled)
+    ppu.write(0xFF40, 0x80);
+
+    // Populate framebuffer with non-zero values first
+    // (or run tick/render directly)
+    ppu.renderScanline();
+
+    const auto &fb = ppu.getFrameBuffer();
+    for (int x = 0; x < PPU::kLcdWidth; ++x)
+    {
+        EXPECT_EQ(fb[x], 0);
+    }
+}
+
+TEST_F(PPUTest, RenderScanline_BasicBackgroundAndPalette)
+{
+    ppu.write(0x9800, 69); // let vram at 0x9800 has some garbage value
+
+    // Enable LCD and Background (Bit 7 and Bit 0)
+    // Enable unsigned addressing mode (Bit 4)
+    ppu.write(0xFF40, 0x91);
+    // Set BGP palette: map color indices 0,1,2,3 to shades 0,1,2,3 (e.g., 0xFE = 11 11 10 00 in binary pairs, or standard 0x1B etc.)
+    ppu.write(0xFF47, 0xE4); // 11 10 01 00 -> index 3->3, 2->2, 1->1, 0->0
+
+    // Setup a tile at index 0 in VRAM (0x8000)
+    // Let's make every pixel have color index 1 (low byte = 0xFF, high byte = 0x00)
+    for (int row{}; row < 8; ++row)
+    {
+        ppu.write(0x8000 + (row * 2), 0xFF);     // Low byte
+        ppu.write(0x8000 + (row * 2) + 1, 0x00); // High byte
+    }
+
+    // Point tilemap (0x9800) to tile index 0
+    ppu.write(0x9800, 0);
+
+    ppu.renderScanline();
+
+    const auto &fb = ppu.getFrameBuffer();
+    // Color index 1 mapped through BGP 0xE4 should yield shade 1
+    for (int x{}; x < 8; ++x)
+    {
+        EXPECT_EQ(fb[x], 1) << "x: " << x << ", fb[x]: " << fb[x];
+    }
+}
+
+TEST_F(PPUTest, RenderScanline_WithScrollOffsets)
+{
+    ppu.write(0xFF40, 0x91); // LCD enabled, BG Tile Data at 0x8000, BG Enabled
+    ppu.write(0xFF42, 8);    // SCY = 8 (shifts down by 1 tile row)
+    ppu.write(0xFF43, 8);    // SCX = 8 (shifts right by 1 tile col)
+    ppu.write(0xFF47, 0xE4); // BGP palette: 3->3, 2->2, 1->1, 0->0
+
+    // Setup Tile 0: all pixels have color index 1
+    for (int row{}; row < 8; ++row)
+    {
+        ppu.write(0x8000 + (row * 2), 0xFF);     // Low byte
+        ppu.write(0x8000 + (row * 2) + 1, 0x00); // High byte
+    }
+
+    // Setup Tile 1: all pixels have color index 2
+    for (int row{}; row < 8; ++row)
+    {
+        ppu.write(0x8010 + (row * 2), 0x00);     // Low byte
+        ppu.write(0x8010 + (row * 2) + 1, 0xFF); // High byte
+    }
+
+    // Map setup (32 bytes per row):
+    // Put Tile 0 at (col 0, row 0), and Tile 1 at (col 1, row 1) -> index = 1 * 32 + 1 = 33 (0x21)
+    ppu.write(0x9800, 0x00);          // Top-left (0,0) = Tile 0
+    ppu.write(0x9800 + 32 + 1, 0x01); // Row 1, Col 1 = Tile 1
+
+    ppu.renderScanline();
+
+    const auto &fb = ppu.getFrameBuffer();
+    // With SCX=8 and SCY=8, screen pixel x=0, y=0 maps to tilemap (col 1, row 1), which is Tile 1 (color index 2)
+    for (int x{}; x < 8; ++x)
+    {
+        EXPECT_EQ(fb[x], 2) << "x: " << x << ", fb[x]: " << static_cast<int>(fb[x]);
+    }
+}
+
+TEST_F(PPUTest, RenderScanline_SignedTileAddressing)
+{
+    // LCDC: Bit 7 ON (LCD), Bit 4 OFF (Tile Data at 0x8800, signed), Bit 0 ON (BG) -> 0x81
+    ppu.write(0xFF40, 0x81);
+    ppu.write(0xFF47, 0xE4); // BGP palette: 3->3, 2->2, 1->1, 0->0
+
+    // Tile ID = 0xFF (-1 in signed int8_t) maps to base 0x9000 + (-1 * 16) = 0x8FF0
+    ppu.write(0x9800, 0xFF);
+
+    // Populate tile data at 0x8FF0 with color index 1 (low byte = 0xFF, high byte = 0x00)
+    for (int row{}; row < 8; ++row)
+    {
+        ppu.write(0x8FF0 + (row * 2), 0xFF);     // Low byte
+        ppu.write(0x8FF0 + (row * 2) + 1, 0x00); // High byte
+    }
+
+    ppu.renderScanline();
+
+    const auto &fb = ppu.getFrameBuffer();
+    // Color index 1 mapped through BGP 0xE4 should yield shade 1
+    for (int x{}; x < 8; ++x)
+    {
+        EXPECT_EQ(fb[x], 1) << "x: " << x << ", fb[x]: " << static_cast<int>(fb[x]);
+    }
+}

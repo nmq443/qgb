@@ -53,12 +53,11 @@ public:
     auto getTileDataAddress(int tileId) const -> uint16_t;
     auto getBgTilemapAddr() const -> uint16_t;
     auto decodeTile(uint16_t tileAddr) const -> Tile;
-
-private:
     void setMode(PPUMode mode);
     void renderScanline();
     void updateStatLine();
 
+private:
     bool mIsFrameReady{false};
     bool mPrevStatline{false};
     uint8_t mLy = 0;

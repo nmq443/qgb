@@ -113,7 +113,6 @@ void PPU::write(uint16_t address, uint8_t value)
     else if (0xff41 == address)
     {
         mStatEnable = value & 0x78; // only bit 3-6 are writable
-        updateStatLine();
     }
     else if (0xff46 == address)
     {
