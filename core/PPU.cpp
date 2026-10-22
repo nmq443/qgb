@@ -27,12 +27,7 @@ auto PPU::read(uint16_t address) const -> uint8_t
     }
     else if (0xff41 == address)
     {
-        uint8_t lycFlag = (mLy == mLyc) ? 0x04 : 0x00;
-        // bit 7 are always 1
-        // bit 3-6: game writable
-        // bit 2: lyc flag
-        // bit 0-1: ppu mode
-        return 0x80 | mStatEnable | lycFlag | static_cast<int>(mMode);
+        return mStat;
     }
     else if (0xff46 == address)
     {
@@ -86,7 +81,7 @@ void PPU::write(uint16_t address, uint8_t value)
     else if (0xff45 == address)
     {
         mLyc = value;
-        updateStatLine();
+        refreshLycFlag();
     }
     else if (0xff40 == address)
     {
@@ -112,7 +107,7 @@ void PPU::write(uint16_t address, uint8_t value)
     }
     else if (0xff41 == address)
     {
-        mStatEnable = value & 0x78; // only bit 3-6 are writable
+        mStat = value & 0b1111'1000;
     }
     else if (0xff46 == address)
     {
@@ -155,65 +150,58 @@ auto PPU::getFrameBuffer() const -> const std::array<uint8_t, kLcdHeight * kLcdW
 
 void PPU::tick(int tCycles)
 {
-    if (!(mLcdc & 0x80)) // LCD off, do nothing
+    if (!getBit(mLcdc, static_cast<uint8_t>(LCDC::LcdAndPPUEnable))) // LCD off, do nothing
     {
+        mLy = 0;
+        mDot = 0;
+        setMode(PPUMode::HBlank);
+        refreshLycFlag();
         return;
     }
 
-    while (tCycles > 0)
+    updateModeWithinCurrentLine();
+    mDot += tCycles;
+    updateModeWithinCurrentLine();
+
+    while (mDot >= kDotsPerLine)
     {
-        tCycles--;
+        mDot -= kDotsPerLine;
 
-        ++mDot;
-        if (mLy < kVBlankStart)
+        if (mLy < kLcdHeight)
         {
-            if (mDot == kOamScanDots)
-            {
-                setMode(PPUMode::Drawing);
-            }
-            else if (mDot == kOamScanDots + kDrawingDots)
-            {
-                renderScanline();
-                setMode(PPUMode::HBlank);
-                updateStatLine();
-            }
+            renderScanline();
         }
 
-        if (mDot == kDotsPerLine)
-        {
-            mDot = 0;
-            ++mLy;
-            updateStatLine();
+        ++mLy;
 
-            if (mLy == kVBlankStart)
+        if (kLcdHeight == mLy)
+        {
+            if (mVBlankInterrupt)
             {
-                setMode(PPUMode::VBlank);
-                if (mVBlankInterrupt)
-                {
-                    mVBlankInterrupt();
-                }
-                mIsFrameReady = true;
+                mVBlankInterrupt();
             }
-            else if (mLy == kLinesPerFrame)
-            {
-                mLy = 0;
-                updateStatLine();
-                setMode(PPUMode::OamScan);
-            }
-            else if (mLy < kVBlankStart)
-            {
-                setMode(PPUMode::OamScan);
-            }
-            // lines 145-153 simply stay in VBlank
+            mIsFrameReady = true;
+        }
+        else if (mLy >= kLinesPerFrame)
+        {
+            mLy = 0;
         }
 
-        updateStatLine();
+        updateLyc();
+        updateModeWithinCurrentLine();
     }
 }
 
 void PPU::setMode(PPUMode mode)
 {
     mMode = mode;
+    mStat &= 0b1111'1100; // clear bit 0 and 1 to set new mode
+    mStat |= static_cast<uint8_t>(mode);
+}
+
+auto PPU::getMode() const -> PPUMode
+{
+    return static_cast<PPUMode>(mStat & 0b0000'0011);
 }
 
 void PPU::renderScanline()
@@ -264,22 +252,59 @@ void PPU::renderScanline()
     }
 }
 
-void PPU::updateStatLine()
+void PPU::updateLyc()
 {
-    bool lycMatch = mLy == mLyc;
-    bool line = (lycMatch && (mStatEnable & 0x40)) or                  // bit 6
-                (mMode == PPUMode::OamScan && (mStatEnable & 0x20)) or // bit 5
-                (mMode == PPUMode::VBlank && (mStatEnable & 0x10)) or  // bit 4
-                (mMode == PPUMode::HBlank && (mStatEnable & 0x08));    // bit 3
-
-    if (line and !mPrevStatline)
+    bool oldCoincidence{getBit(mStat, static_cast<uint8_t>(Stat::LycEqualsLy))};
+    bool newCoincidence{refreshLycFlag()};
+    if (!oldCoincidence and newCoincidence and getBit(mStat, static_cast<uint8_t>(Stat::LycInterrupt)))
     {
         if (mStatInterrupt)
         {
             mStatInterrupt();
         }
     }
-    mPrevStatline = line;
+}
+
+auto PPU::refreshLycFlag() -> bool
+{
+    bool status{mLy == mLyc};
+    mStat = setBit(mStat, static_cast<uint8_t>(Stat::LycEqualsLy), status);
+    return status;
+}
+
+void PPU::updateModeWithinCurrentLine()
+{
+    bool ret{false};
+
+    PPUMode oldMode{getMode()};
+    if (mLy >= kLcdHeight)
+    {
+        setMode(PPUMode::VBlank);
+    }
+    else if (mDot < kOamScanDots)
+    {
+        setMode(PPUMode::OamScan);
+    }
+    else if (mDot < kOamScanDots + kDrawingDots)
+    {
+        setMode(PPUMode::Drawing);
+    }
+    else
+    {
+        setMode(PPUMode::HBlank);
+    }
+
+    PPUMode currentMode{getMode()};
+    if (currentMode != oldMode)
+    {
+        ret |= PPUMode::OamScan == currentMode and getBit(mStat, static_cast<uint8_t>(Stat::Mode2Interrupt));
+        ret |= PPUMode::VBlank == currentMode and getBit(mStat, static_cast<uint8_t>(Stat::Mode1Interrupt));
+        ret |= PPUMode::HBlank == currentMode and getBit(mStat, static_cast<uint8_t>(Stat::Mode0Interrupt));
+    }
+    if (ret and mStatInterrupt)
+    {
+        mStatInterrupt();
+    }
 }
 
 bool PPU::isFrameReady() const

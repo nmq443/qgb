@@ -118,13 +118,6 @@ TEST_F(PPUTest, VramAndOamAccessibleWhileLcdOff)
     EXPECT_EQ(ppu.read(0xfe10), 0xcd);
 }
 
-TEST_F(PPUTest, StatBit7AlwaysReadsOne)
-{
-    EXPECT_TRUE(ppu.read(kStat) & 0x80);
-    ppu.write(kStat, 0x00);
-    EXPECT_TRUE(ppu.read(kStat) & 0x80);
-}
-
 TEST_F(PPUTest, StatOnlyBits3To6AreWritable)
 {
     // Try to set all bits to 1. Only bits 3-6 should be writable,

@@ -7,7 +7,7 @@
 
 namespace qgb
 {
-enum class PPUMode
+enum class PPUMode : uint8_t
 {
     HBlank,
     VBlank,
@@ -15,7 +15,7 @@ enum class PPUMode
     Drawing
 };
 
-enum class LCDC
+enum class LCDC : uint8_t
 {
     BgAndWindowEnable,
     ObjEnable,
@@ -25,6 +25,16 @@ enum class LCDC
     WindowEnable,
     WindowTilemap,
     LcdAndPPUEnable
+};
+
+enum class Stat : uint8_t
+{
+    PPUMode = 0,        // 2 bits wide (bits 0-1)
+    LycEqualsLy = 2,    // bit 2
+    Mode0Interrupt = 3, // bit 3
+    Mode1Interrupt = 4, // bit 4
+    Mode2Interrupt = 5, // bit 5
+    LycInterrupt = 6    // bit 6
 };
 
 using Tile = std::array<std::array<uint8_t, 8>, 8>;
@@ -54,12 +64,14 @@ public:
     auto getBgTilemapAddr() const -> uint16_t;
     auto decodeTile(uint16_t tileAddr) const -> Tile;
     void setMode(PPUMode mode);
+    auto getMode() const -> PPUMode;
     void renderScanline();
-    void updateStatLine();
+    void updateLyc();
+    auto refreshLycFlag() -> bool;
+    void updateModeWithinCurrentLine();
 
 private:
     bool mIsFrameReady{false};
-    bool mPrevStatline{false};
     uint8_t mLy = 0;
     uint8_t mLyc = 0;
     uint8_t mScx{};
@@ -72,7 +84,7 @@ private:
     uint8_t mWy{};
     uint8_t mLcdc{};
     int mDot{};
-    uint8_t mStatEnable{};
+    uint8_t mStat{};
     std::array<uint8_t, 0x2000> mVram = {};
     std::array<uint8_t, 0xa0> mOam = {};
     std::array<uint8_t, kLcdHeight * kLcdWidth> mFrameBuffer = {};
