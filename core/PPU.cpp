@@ -81,7 +81,7 @@ void PPU::write(uint16_t address, uint8_t value)
     else if (0xff45 == address)
     {
         mLyc = value;
-        refreshLycFlag();
+        updateLyc();
     }
     else if (0xff40 == address)
     {
@@ -94,6 +94,7 @@ void PPU::write(uint16_t address, uint8_t value)
             // lcd turn off
             mLy = 0;
             mDot = 0;
+            mLineRendered = false;
             setMode(PPUMode::HBlank);
             std::fill(std::begin(mFrameBuffer), std::end(mFrameBuffer), 0);
         }
@@ -107,7 +108,7 @@ void PPU::write(uint16_t address, uint8_t value)
     }
     else if (0xff41 == address)
     {
-        mStat = value & 0b1111'1000;
+        mStat = (mStat & 0b0000'0111) | (value & 0b0111'1000);
     }
     else if (0xff46 == address)
     {
@@ -166,12 +167,7 @@ void PPU::tick(int tCycles)
     while (mDot >= kDotsPerLine)
     {
         mDot -= kDotsPerLine;
-
-        if (mLy < kLcdHeight)
-        {
-            renderScanline();
-        }
-
+        mLineRendered = false; // new line begins
         ++mLy;
 
         if (kLcdHeight == mLy)
@@ -294,6 +290,12 @@ void PPU::updateModeWithinCurrentLine()
         setMode(PPUMode::HBlank);
     }
 
+    if (mLy < kLcdHeight and mDot >= kOamScanDots + kDrawingDots and !mLineRendered)
+    {
+        renderScanline();
+        mLineRendered = true;
+    }
+
     PPUMode currentMode{getMode()};
     if (currentMode != oldMode)
     {
@@ -350,7 +352,6 @@ auto PPU::decodeTile(uint16_t tileAddr) const -> Tile
 
 auto PPU::getTileDataAddress(int tileId) const -> uint16_t
 {
-    uint16_t address{};                                              // tile address = based address + index * sizeof(a signle tile which is 16 bytes)
     if (getBit(mLcdc, static_cast<uint8_t>(LCDC::BgAndWindowTiles))) // 0x8000 - 0x8fff
     {
         // unsigned
@@ -361,7 +362,6 @@ auto PPU::getTileDataAddress(int tileId) const -> uint16_t
         // signed
         return 0x9000 + static_cast<int8_t>(tileId) * 16; // 1 tile is 16 bytes
     }
-    return address;
 }
 
 auto PPU::getBgTilemapAddr() const -> uint16_t

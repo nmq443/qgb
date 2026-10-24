@@ -9,7 +9,7 @@ int main(int, char *[])
     using namespace qgb;
 
     Emulator emu;
-    emu.load("../roms/lyc/lyc.gb");
+    emu.load("../roms/pokemon.gb");
     emu.setSerialCallback([](char c)
                           { std::cout << c << std::flush; });
 
@@ -53,20 +53,23 @@ int main(int, char *[])
             }
         }
 
-        while (!emu.getPPU().isFrameReady())
-        {
-            emu.step();
-        }
-        emu.getPPU().setFrameReady(false); // consume the flag
+        emu.step();
 
-        const auto &frameBuffer = emu.getPPU().getFrameBuffer();
-        for (size_t i = 0; i < frameBuffer.size(); ++i)
-        {
-            pixels[i] = SHADES[frameBuffer[i]];
-        }
+        std::cout << "aaa\n";
 
-        SDL_UpdateTexture(texture, nullptr, pixels.data(),
-                          WIDTH * sizeof(uint32_t)); // pitch in bytes
+        if (emu.getPPU().isFrameReady())
+        {
+            const auto &frameBuffer = emu.getPPU().getFrameBuffer();
+            for (size_t i = 0; i < frameBuffer.size(); ++i)
+            {
+                pixels[i] = SHADES[frameBuffer[i]];
+            }
+
+            SDL_UpdateTexture(texture, nullptr, pixels.data(),
+                              WIDTH * sizeof(uint32_t)); // pitch in bytes
+
+            emu.getPPU().setFrameReady(false);
+        }
 
         SDL_RenderClear(renderer);
         SDL_RenderTexture(renderer, texture, nullptr, nullptr); // stretches to window

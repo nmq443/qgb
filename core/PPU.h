@@ -72,6 +72,7 @@ public:
 
 private:
     bool mIsFrameReady{false};
+    bool mLineRendered{false};
     uint8_t mLy = 0;
     uint8_t mLyc = 0;
     uint8_t mScx{};
