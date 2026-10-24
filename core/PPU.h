@@ -62,7 +62,6 @@ public:
     void setVBlankInterrupt(const std::function<void()> &vblankInterrupt);
     auto getTileDataAddress(int tileId) const -> uint16_t;
     auto getBgTilemapAddr() const -> uint16_t;
-    auto decodeTile(uint16_t tileAddr) const -> Tile;
     void setMode(PPUMode mode);
     auto getMode() const -> PPUMode;
     void renderScanline();

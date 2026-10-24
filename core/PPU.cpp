@@ -334,27 +334,6 @@ void PPU::setVBlankInterrupt(const std::function<void()> &vblankInterrupt)
     mVBlankInterrupt = vblankInterrupt;
 }
 
-auto PPU::decodeTile(uint16_t tileAddr) const -> Tile
-{
-    Tile tile{};
-
-    for (int row{}; row < 8; ++row)
-    {
-        uint16_t rowAddress = tileAddr + (row * 2);
-        uint8_t lo = read(rowAddress);
-        uint8_t hi = read(rowAddress + 1);
-        for (int col{}; col < 8; ++col)
-        {
-            int bit{7 - col}; // current bit index
-            int higherBitOfCurrentPixel{(hi >> bit) & 1};
-            int lowerBitOfCurrentPixel{(lo >> bit) & 1};
-            tile[row][col] = (higherBitOfCurrentPixel << 1) | lowerBitOfCurrentPixel;
-        }
-    }
-
-    return tile;
-}
-
 auto PPU::getTileDataAddress(int tileId) const -> uint16_t
 {
     if (getBit(mLcdc, static_cast<uint8_t>(LCDC::BgAndWindowTiles))) // 0x8000 - 0x8fff
