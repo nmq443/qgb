@@ -236,13 +236,18 @@ void PPU::renderScanline()
         // Based on the tile index, we get the tile address
         uint16_t tileAddr{getTileDataAddress(tileId)};
 
-        // Create a tile structure from raw 16 bytes
-        Tile tile{decodeTile(tileAddr)};
-
         // Then assign each pixel
         uint8_t pixelX{static_cast<uint8_t>(mapX % 8)};
         uint8_t pixelY{static_cast<uint8_t>(mapY % 8)};
-        uint8_t colorIndex{tile[pixelY][pixelX]};
+
+        uint16_t rowAddress{static_cast<uint16_t>(tileAddr + (pixelY * 2))}; // each row have 2 bytes
+        uint8_t lo{read(rowAddress)};
+        uint8_t hi{read(rowAddress + 1)};
+        uint8_t bit{static_cast<uint8_t>(7 - pixelX)};
+        uint8_t higherBitOfCurrentPixel{static_cast<uint8_t>((hi >> bit) & 1)};
+        uint8_t lowerBitOfCurrentPixel{static_cast<uint8_t>((lo >> bit) & 1)};
+
+        uint8_t colorIndex{static_cast<uint8_t>((higherBitOfCurrentPixel << 1) | lowerBitOfCurrentPixel)};
         uint8_t shade{static_cast<uint8_t>((mBgp >> (colorIndex * 2)) & 0x03)};
         mFrameBuffer[mLy * kLcdWidth + x] = shade;
     }
