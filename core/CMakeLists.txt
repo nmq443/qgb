@@ -6,4 +6,5 @@ add_library(core STATIC
         Registers.cpp
         Utils.cpp
         Timer.cpp
-        Clock.cpp)
+        Clock.cpp
+        PPU.cpp)

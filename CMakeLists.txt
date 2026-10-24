@@ -8,6 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
+
 if(MSVC)
     add_compile_options(/W4)
 else()

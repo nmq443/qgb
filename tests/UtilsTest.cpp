@@ -16,6 +16,34 @@ TEST(UtilsTest, MakeWordAndBytes)
     EXPECT_EQ(actualLow, low);
 }
 
+TEST(UtilsTest, GetAndSetBits)
+{
+    // 1. Test getBit with a known value (0b00001010 / decimal 10)
+    uint8_t num{0b00001010};
+    EXPECT_TRUE(getBit(num, 1));
+    EXPECT_TRUE(getBit(num, 3));
+    EXPECT_FALSE(getBit(num, 0));
+    EXPECT_FALSE(getBit(num, 2));
+
+    // 2. Test setBit and verify modifications
+    uint8_t val{0b00000000};
+
+    // Set bit 0 to true
+    val = setBit(val, 0, true);
+    EXPECT_EQ(val, 0b00000001);
+    EXPECT_TRUE(getBit(val, 0));
+
+    // Set bit 3 to true
+    val = setBit(val, 3, true);
+    EXPECT_EQ(val, 0b00001001);
+    EXPECT_TRUE(getBit(val, 3));
+
+    // Clear bit 0 back to false
+    val = setBit(val, 0, false);
+    EXPECT_EQ(val, 0b00001000);
+    EXPECT_FALSE(getBit(val, 0));
+}
+
 TEST(UtilsTest, ReadGbRomSuccessfully)
 {
     std::vector<uint8_t> rom;

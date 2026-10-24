@@ -1,4 +1,7 @@
 #include "Utils.h"
+#include <cerrno>
+#include <cstring>
+#include <format>
 #include <fstream>
 
 namespace qgb
@@ -13,12 +16,31 @@ std::pair<uint8_t, uint8_t> makeBytes(uint16_t word)
     return std::make_pair(static_cast<uint8_t>(word >> 8), static_cast<uint8_t>(word & 0xff));
 }
 
+auto getBit(uint8_t num, uint8_t bit) -> bool
+{
+    return ((num >> bit) & 1) > 0;
+}
+
+auto setBit(uint8_t num, uint8_t bit, bool status) -> uint8_t
+{
+    if (status)
+    {
+        num |= 1 << bit;
+    }
+    else
+    {
+        num &= ~(1 << bit);
+    }
+    return num;
+}
+
 std::vector<uint8_t> readGbRom(const std::filesystem::path &filepath)
 {
     std::ifstream file(filepath, std::ios::binary);
     if (!file.is_open())
     {
-        throw std::runtime_error("Failed to open file: " + filepath.string());
+        std::string msg{std::format("Failed to open file: {}. \nError code: {}", filepath.string(), std::strerror(errno))};
+        throw std::runtime_error(msg);
     }
 
     auto size = std::filesystem::file_size(filepath);
