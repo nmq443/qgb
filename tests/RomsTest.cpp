@@ -18,7 +18,9 @@ const std::vector<std::filesystem::path> kROMPaths = {
     "../roms/cpu_instrs/individual/10-bit ops.gb",
     "../roms/cpu_instrs/individual/11-op a,(hl).gb",
     "../roms/instr_timing/instr_timing.gb",
-    "../roms/mem_timing/individual/01-read_timing.gb"};
+    "../roms/mem_timing/individual/01-read_timing.gb",
+    "../roms/mem_timing/individual/02-write_timing.gb",
+    "../roms/mem_timing/individual/03-modify_timing.gb"};
 
 static std::string runRomUntilResult(const std::filesystem::path &romPath)
 {
