@@ -49,6 +49,8 @@ public:
     static constexpr int kVBlankStart = 144;
     static constexpr int kOamScanDots = 80;
     static constexpr int kDrawingDots = 172;
+    static constexpr int kTileMapWidth{32}; // tiles per row
+    static constexpr int kTileSize{8};      // pixels per tile side
 
     PPU() = default;
 

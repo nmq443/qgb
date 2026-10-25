@@ -108,7 +108,7 @@ void PPU::write(uint16_t address, uint8_t value)
     }
     else if (0xff41 == address)
     {
-        mStat = (mStat & 0b0000'0111) | (value & 0b0111'1000);
+        mStat = (mStat & 0b0000'0111) | (value & 0b1111'1000);
     }
     else if (0xff46 == address)
     {
@@ -212,22 +212,23 @@ void PPU::renderScanline()
     }
 
     uint16_t mapBase{getBgTilemapAddr()}; // background's tilemap start address
+    const uint8_t bgY{static_cast<uint8_t>(mLy + mScy)};
+    const uint8_t tileMapRow{static_cast<uint8_t>(bgY / kTileSize)};
+    const uint8_t pixelY{static_cast<uint8_t>(bgY % kTileSize)};
 
     for (int x{}; x < kLcdWidth; ++x)
     {
         // Transform from screen coordinate to tilemap coordinate
-        uint8_t mapX{static_cast<uint8_t>(x + mScx)};
-        uint8_t mapY{static_cast<uint8_t>(mLy + mScy)};
+        uint8_t bgX{static_cast<uint8_t>(x + mScx)};
 
-        // Get tile coordinate on the screen based on current pixel (x, ly)
-        uint8_t tileRow{static_cast<uint8_t>(mapY / 8)};
-        uint8_t tileCol{static_cast<uint8_t>(mapX / 8)};
+        // Get tile coordinate in the BG map
+        uint8_t tileMapCol{static_cast<uint8_t>(bgX / kTileSize)};
 
         // Get tilemap address: base's address + tilemap offset
         // Since the tiles in tilemap is saved as a 1d array
         // We need to convert from 2d -> 1d coordinates
         // Using formula: index = row * WIDTH + col
-        uint16_t mapAddr{static_cast<uint16_t>(mapBase + tileRow * 32 + tileCol)}; // 1 tile is 32 bytes in size
+        uint16_t mapAddr{static_cast<uint16_t>(mapBase + tileMapRow * kTileMapWidth + tileMapCol)}; // tilemap has 32x32 tiles
 
         // Each tile map contains the 1-byte indexes of the tiles to be displayed.
         // Not the data itself.
@@ -236,18 +237,17 @@ void PPU::renderScanline()
         // Based on the tile index, we get the tile address
         uint16_t tileAddr{getTileDataAddress(tileId)};
 
-        // Then assign each pixel
-        uint8_t pixelX{static_cast<uint8_t>(mapX % 8)};
-        uint8_t pixelY{static_cast<uint8_t>(mapY % 8)};
+        // Current pixel coordinate on the tile
+        uint8_t pixelX{static_cast<uint8_t>(bgX % kTileSize)};
 
         uint16_t rowAddress{static_cast<uint16_t>(tileAddr + (pixelY * 2))}; // each row have 2 bytes
         uint8_t lo{read(rowAddress)};
         uint8_t hi{read(rowAddress + 1)};
-        uint8_t bit{static_cast<uint8_t>(7 - pixelX)};
-        uint8_t higherBitOfCurrentPixel{static_cast<uint8_t>((hi >> bit) & 1)};
-        uint8_t lowerBitOfCurrentPixel{static_cast<uint8_t>((lo >> bit) & 1)};
+        uint8_t bitIndex{static_cast<uint8_t>(7 - pixelX)};
+        uint8_t hiBit{static_cast<uint8_t>((hi >> bitIndex) & 1)};
+        uint8_t loBit{static_cast<uint8_t>((lo >> bitIndex) & 1)};
 
-        uint8_t colorIndex{static_cast<uint8_t>((higherBitOfCurrentPixel << 1) | lowerBitOfCurrentPixel)};
+        uint8_t colorIndex{static_cast<uint8_t>((hiBit << 1) | loBit)};
         uint8_t shade{static_cast<uint8_t>((mBgp >> (colorIndex * 2)) & 0x03)};
         mFrameBuffer[mLy * kLcdWidth + x] = shade;
     }
