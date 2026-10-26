@@ -93,6 +93,7 @@ void PPU::write(uint16_t address, uint8_t value)
         {
             // lcd turn off
             mLy = 0;
+            mWindowLine = 0;
             mDot = 0;
             mLineRendered = false;
             setMode(PPUMode::HBlank);
@@ -181,6 +182,7 @@ void PPU::tick(int tCycles)
         else if (mLy >= kLinesPerFrame)
         {
             mLy = 0;
+            mWindowLine = 0;
         }
 
         updateLyc();
@@ -200,7 +202,7 @@ auto PPU::getMode() const -> PPUMode
     return static_cast<PPUMode>(mStat & 0b0000'0011);
 }
 
-void PPU::renderScanline()
+void PPU::renderBackgroundScanline()
 {
     if (!getBit(mLcdc, static_cast<uint8_t>(LCDC::BgAndWindowEnable)))
     {
@@ -234,23 +236,58 @@ void PPU::renderScanline()
         // Not the data itself.
         uint8_t tileId{read(mapAddr)};
 
-        // Based on the tile index, we get the tile address
-        uint16_t tileAddr{getTileDataAddress(tileId)};
-
         // Current pixel coordinate on the tile
         uint8_t pixelX{static_cast<uint8_t>(bgX % kTileSize)};
 
-        uint16_t rowAddress{static_cast<uint16_t>(tileAddr + (pixelY * 2))}; // each row have 2 bytes
-        uint8_t lo{read(rowAddress)};
-        uint8_t hi{read(rowAddress + 1)};
-        uint8_t bitIndex{static_cast<uint8_t>(7 - pixelX)};
-        uint8_t hiBit{static_cast<uint8_t>((hi >> bitIndex) & 1)};
-        uint8_t loBit{static_cast<uint8_t>((lo >> bitIndex) & 1)};
-
-        uint8_t colorIndex{static_cast<uint8_t>((hiBit << 1) | loBit)};
+        auto colorIndex = fetchTileColorIndex(tileId, pixelX, pixelY);
         uint8_t shade{static_cast<uint8_t>((mBgp >> (colorIndex * 2)) & 0x03)};
         mFrameBuffer[mLy * kLcdWidth + x] = shade;
     }
+}
+
+void PPU::renderWindowScanline()
+{
+    if (!getBit(mLcdc, static_cast<uint8_t>(LCDC::WindowEnable)) or
+        !getBit(mLcdc, static_cast<uint8_t>(LCDC::BgAndWindowEnable)))
+    {
+        return;
+    }
+
+    if (mLy < mWy) // not reach the window's top yet
+    {
+        return;
+    }
+
+    int winX{mWx - kWindowXOffset}; // screen x where window starts
+    if (winX >= kLcdWidth)          // window is off-screen to the right
+    {
+        return;
+    }
+
+    uint16_t tileMapBase{getWindowTilemapAddr()};
+    for (int x{std::max(winX, 0)}; x < kLcdWidth; ++x)
+    {
+        int windowPixelX{x - winX};    // x inside the window
+        int windowPixelY{mWindowLine}; // internal window line counter
+
+        int tileRow{windowPixelY / kTileSize}; // row of the tile in window tilemap
+        int tileCol{windowPixelX / kTileSize}; // column of the tile in window tilemap
+
+        uint16_t mapAddr{static_cast<uint16_t>(tileMapBase + tileRow * kTileMapWidth + tileCol)};
+        uint8_t tileId{read(mapAddr)};
+        int pixelX{windowPixelX % kTileSize};
+        int pixelY{windowPixelY % kTileSize};
+        auto colorIndex = fetchTileColorIndex(tileId, pixelX, pixelY);
+        uint8_t shade{static_cast<uint8_t>((mBgp >> (colorIndex * 2)) & 0x03)};
+        mFrameBuffer[mLy * kLcdWidth + x] = shade;
+    }
+    ++mWindowLine;
+}
+
+void PPU::renderScanline()
+{
+    renderBackgroundScanline();
+    renderWindowScanline();
 }
 
 void PPU::updateLyc()
@@ -352,5 +389,20 @@ auto PPU::getBgTilemapAddr() const -> uint16_t
 {
     // lcdc bit 3 = 0 then 0x9800-0x9BFF, otherwise 0x9C00-0x9FFF
     return getBit(mLcdc, static_cast<uint8_t>(LCDC::BgTilemap)) ? 0x9c00 : 0x9800;
+}
+
+auto PPU::getWindowTilemapAddr() const -> uint16_t
+{
+    // lcdc bit 6 = 0 then 0x9800-0x9BFF, otherwise 0x9C00-0x9FFF
+    return getBit(mLcdc, static_cast<uint8_t>(LCDC::WindowTilemap)) ? 0x9c00 : 0x9800;
+}
+
+auto PPU::fetchTileColorIndex(uint8_t tileId, int pixelX, int pixelY) const -> uint8_t
+{
+    const uint16_t rowAddr{static_cast<uint16_t>(getTileDataAddress(tileId) + pixelY * 2)};
+    const uint8_t lo{read(rowAddr)};
+    const uint8_t hi{read(static_cast<uint16_t>(rowAddr + 1))};
+    const int bit{7 - pixelX};
+    return static_cast<uint8_t>((((hi >> bit) & 1) << 1) | ((lo >> bit) & 1));
 }
 } // namespace qgb

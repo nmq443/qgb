@@ -51,6 +51,7 @@ public:
     static constexpr int kDrawingDots = 172;
     static constexpr int kTileMapWidth{32}; // tiles per row
     static constexpr int kTileSize{8};      // pixels per tile side
+    static constexpr int kWindowXOffset{7};
 
     PPU() = default;
 
@@ -64,12 +65,16 @@ public:
     void setVBlankInterrupt(const std::function<void()> &vblankInterrupt);
     auto getTileDataAddress(int tileId) const -> uint16_t;
     auto getBgTilemapAddr() const -> uint16_t;
+    auto getWindowTilemapAddr() const -> uint16_t;
     void setMode(PPUMode mode);
     auto getMode() const -> PPUMode;
     void renderScanline();
+    void renderBackgroundScanline();
+    void renderWindowScanline();
     void updateLyc();
     auto refreshLycFlag() -> bool;
     void updateModeWithinCurrentLine();
+    auto fetchTileColorIndex(uint8_t tileId, int pixelX, int pixelY) const -> uint8_t;
 
 private:
     bool mIsFrameReady{false};
@@ -86,6 +91,7 @@ private:
     uint8_t mWy{};
     uint8_t mLcdc{};
     int mDot{};
+    int mWindowLine{};
     uint8_t mStat{};
     std::array<uint8_t, 0x2000> mVram = {};
     std::array<uint8_t, 0xa0> mOam = {};
