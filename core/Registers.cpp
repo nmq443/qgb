@@ -76,12 +76,12 @@ uint16_t Registers::getSP() const
 
 bool Registers::getFlag(Flag flag) const
 {
-    return getBit(mF, static_cast<uint8_t>(flag));
+    return getBit(mF, flag);
 }
 
 void Registers::setFlag(Flag flag, bool on)
 {
-    mF = setBit(mF, static_cast<uint8_t>(flag), on);
+    mF = setBit(mF, flag, on);
 }
 
 void Registers::setPC(uint16_t pc)

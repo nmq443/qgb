@@ -152,7 +152,7 @@ auto PPU::getFrameBuffer() const -> const std::array<uint8_t, kLcdHeight * kLcdW
 
 void PPU::tick(int tCycles)
 {
-    if (!getBit(mLcdc, static_cast<uint8_t>(LCDC::LcdAndPPUEnable))) // LCD off, do nothing
+    if (!getBit(mLcdc, LCDC::LcdAndPPUEnable)) // LCD off, do nothing
     {
         mLy = 0;
         mDot = 0;
@@ -204,7 +204,7 @@ auto PPU::getMode() const -> PPUMode
 
 void PPU::renderBackgroundScanline()
 {
-    if (!getBit(mLcdc, static_cast<uint8_t>(LCDC::BgAndWindowEnable)))
+    if (!getBit(mLcdc, LCDC::BgAndWindowEnable))
     {
         for (int x{}; x < kLcdWidth; ++x)
         {
@@ -247,8 +247,8 @@ void PPU::renderBackgroundScanline()
 
 void PPU::renderWindowScanline()
 {
-    if (!getBit(mLcdc, static_cast<uint8_t>(LCDC::WindowEnable)) or
-        !getBit(mLcdc, static_cast<uint8_t>(LCDC::BgAndWindowEnable)))
+    if (!getBit(mLcdc, LCDC::WindowEnable) or
+        !getBit(mLcdc, LCDC::BgAndWindowEnable))
     {
         return;
     }
@@ -292,9 +292,9 @@ void PPU::renderScanline()
 
 void PPU::updateLyc()
 {
-    bool oldCoincidence{getBit(mStat, static_cast<uint8_t>(Stat::LycEqualsLy))};
+    bool oldCoincidence{getBit(mStat, Stat::LycEqualsLy)};
     bool newCoincidence{refreshLycFlag()};
-    if (!oldCoincidence and newCoincidence and getBit(mStat, static_cast<uint8_t>(Stat::LycInterrupt)))
+    if (!oldCoincidence and newCoincidence and getBit(mStat, Stat::LycInterrupt))
     {
         if (mStatInterrupt)
         {
@@ -306,7 +306,7 @@ void PPU::updateLyc()
 auto PPU::refreshLycFlag() -> bool
 {
     bool status{mLy == mLyc};
-    mStat = setBit(mStat, static_cast<uint8_t>(Stat::LycEqualsLy), status);
+    mStat = setBit(mStat, Stat::LycEqualsLy, status);
     return status;
 }
 
@@ -341,9 +341,9 @@ void PPU::updateModeWithinCurrentLine()
     PPUMode currentMode{getMode()};
     if (currentMode != oldMode)
     {
-        ret |= PPUMode::OamScan == currentMode and getBit(mStat, static_cast<uint8_t>(Stat::Mode2Interrupt));
-        ret |= PPUMode::VBlank == currentMode and getBit(mStat, static_cast<uint8_t>(Stat::Mode1Interrupt));
-        ret |= PPUMode::HBlank == currentMode and getBit(mStat, static_cast<uint8_t>(Stat::Mode0Interrupt));
+        ret |= PPUMode::OamScan == currentMode and getBit(mStat, Stat::Mode2Interrupt);
+        ret |= PPUMode::VBlank == currentMode and getBit(mStat, Stat::Mode1Interrupt);
+        ret |= PPUMode::HBlank == currentMode and getBit(mStat, Stat::Mode0Interrupt);
     }
     if (ret and mStatInterrupt)
     {
@@ -373,7 +373,7 @@ void PPU::setVBlankInterrupt(const std::function<void()> &vblankInterrupt)
 
 auto PPU::getTileDataAddress(int tileId) const -> uint16_t
 {
-    if (getBit(mLcdc, static_cast<uint8_t>(LCDC::BgAndWindowTiles))) // 0x8000 - 0x8fff
+    if (getBit(mLcdc, LCDC::BgAndWindowTiles)) // 0x8000 - 0x8fff
     {
         // unsigned
         return 0x8000 + tileId * 16; // 1 tile is 16 bytes
@@ -388,13 +388,13 @@ auto PPU::getTileDataAddress(int tileId) const -> uint16_t
 auto PPU::getBgTilemapAddr() const -> uint16_t
 {
     // lcdc bit 3 = 0 then 0x9800-0x9BFF, otherwise 0x9C00-0x9FFF
-    return getBit(mLcdc, static_cast<uint8_t>(LCDC::BgTilemap)) ? 0x9c00 : 0x9800;
+    return getBit(mLcdc, LCDC::BgTilemap) ? 0x9c00 : 0x9800;
 }
 
 auto PPU::getWindowTilemapAddr() const -> uint16_t
 {
     // lcdc bit 6 = 0 then 0x9800-0x9BFF, otherwise 0x9C00-0x9FFF
-    return getBit(mLcdc, static_cast<uint8_t>(LCDC::WindowTilemap)) ? 0x9c00 : 0x9800;
+    return getBit(mLcdc, LCDC::WindowTilemap) ? 0x9c00 : 0x9800;
 }
 
 auto PPU::fetchTileColorIndex(uint8_t tileId, int pixelX, int pixelY) const -> uint8_t

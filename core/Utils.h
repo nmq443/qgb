@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <type_traits>
 #include <vector>
 
 namespace qgb
@@ -24,19 +25,40 @@ std::pair<uint8_t, uint8_t> makeBytes(uint16_t word);
 /**
  * @brief Get status of a bit of a value
  * @param num Target number
- * @param bit Target bit
+ * @param flag Target bit (pass enum class in)
  * @return Status of the bit
  */
-auto getBit(uint8_t num, uint8_t bit) -> bool;
+template <typename Enum>
+    requires std::is_enum_v<Enum>
+auto getBit(uint8_t num, Enum flag) -> bool
+{
+    using Underlying = std::underlying_type_t<Enum>;
+    return ((num >> static_cast<Underlying>(flag)) & 1) > 0;
+}
 
 /**
  * @brief Set status of a bit of a value
  * @param num Target number
- * @param bit Target bit
+ * @param flag Target bit (pass enum class in)
  * @param bit Status on or off
  * @return Value after setting bit status
  */
-auto setBit(uint8_t num, uint8_t bit, bool status) -> uint8_t;
+template <typename Enum>
+    requires std::is_enum_v<Enum>
+auto setBit(uint8_t num, Enum flag, bool status) -> uint8_t
+{
+    using Underlying = std::underlying_type_t<Enum>;
+    auto bit = static_cast<Underlying>(flag);
+    if (status)
+    {
+        num |= 1 << bit;
+    }
+    else
+    {
+        num &= ~(1 << bit);
+    }
+    return num;
+}
 
 /**
  * @brief Get ROM from a binary file

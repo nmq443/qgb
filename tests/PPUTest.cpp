@@ -378,7 +378,7 @@ TEST_F(PPUTest, NullStatCallbackDoesNotCrash)
 TEST_F(PPUTest, TileDataAddressUnsignedMode_0x8000)
 {
     // 0x8000 - 0x8FFF range
-    turnOn(setBit(1, static_cast<uint8_t>(LCDC::BgAndWindowTiles), true));
+    turnOn(setBit(1, LCDC::BgAndWindowTiles, true));
 
     EXPECT_EQ(ppu.getTileDataAddress(0), 0x8000);
     EXPECT_EQ(ppu.getTileDataAddress(1), 0x8010);
@@ -388,7 +388,7 @@ TEST_F(PPUTest, TileDataAddressUnsignedMode_0x8000)
 TEST_F(PPUTest, TileDataAddressSignedMode_0x8800)
 {
     // 0x8800 - 0x97FF range
-    turnOn(setBit(1, static_cast<uint8_t>(LCDC::BgAndWindowTiles), false));
+    turnOn(setBit(1, LCDC::BgAndWindowTiles, false));
 
     EXPECT_EQ(ppu.getTileDataAddress(0), 0x9000);
     EXPECT_EQ(ppu.getTileDataAddress(1), 0x9010);
