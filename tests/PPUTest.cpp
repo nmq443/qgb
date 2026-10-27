@@ -425,7 +425,7 @@ TEST_F(PPUTest, RenderScanline_BasicBackgroundAndPalette)
 
     // Setup a tile at index 0 in VRAM (0x8000)
     // Let's make every pixel have color index 1 (low byte = 0xFF, high byte = 0x00)
-    for (int row{}; row < 8; ++row)
+    for (int row = 0; row < 8; ++row)
     {
         ppu.write(0x8000 + (row * 2), 0xFF);     // Low byte
         ppu.write(0x8000 + (row * 2) + 1, 0x00); // High byte
@@ -438,7 +438,7 @@ TEST_F(PPUTest, RenderScanline_BasicBackgroundAndPalette)
 
     const auto &fb = ppu.getFrameBuffer();
     // Color index 1 mapped through BGP 0xE4 should yield shade 1
-    for (int x{}; x < 8; ++x)
+    for (int x = 0; x < 8; ++x)
     {
         EXPECT_EQ(fb[x], 1) << "x: " << x << ", fb[x]: " << fb[x];
     }
@@ -452,14 +452,14 @@ TEST_F(PPUTest, RenderScanline_WithScrollOffsets)
     ppu.write(0xFF47, 0xE4); // BGP palette: 3->3, 2->2, 1->1, 0->0
 
     // Setup Tile 0: all pixels have color index 1
-    for (int row{}; row < 8; ++row)
+    for (int row = 0; row < 8; ++row)
     {
         ppu.write(0x8000 + (row * 2), 0xFF);     // Low byte
         ppu.write(0x8000 + (row * 2) + 1, 0x00); // High byte
     }
 
     // Setup Tile 1: all pixels have color index 2
-    for (int row{}; row < 8; ++row)
+    for (int row = 0; row < 8; ++row)
     {
         ppu.write(0x8010 + (row * 2), 0x00);     // Low byte
         ppu.write(0x8010 + (row * 2) + 1, 0xFF); // High byte
@@ -474,7 +474,7 @@ TEST_F(PPUTest, RenderScanline_WithScrollOffsets)
 
     const auto &fb = ppu.getFrameBuffer();
     // With SCX=8 and SCY=8, screen pixel x=0, y=0 maps to tilemap (col 1, row 1), which is Tile 1 (color index 2)
-    for (int x{}; x < 8; ++x)
+    for (int x = 0; x < 8; ++x)
     {
         EXPECT_EQ(fb[x], 2) << "x: " << x << ", fb[x]: " << static_cast<int>(fb[x]);
     }
@@ -490,7 +490,7 @@ TEST_F(PPUTest, RenderScanline_SignedTileAddressing)
     ppu.write(0x9800, 0xFF);
 
     // Populate tile data at 0x8FF0 with color index 1 (low byte = 0xFF, high byte = 0x00)
-    for (int row{}; row < 8; ++row)
+    for (int row = 0; row < 8; ++row)
     {
         ppu.write(0x8FF0 + (row * 2), 0xFF);     // Low byte
         ppu.write(0x8FF0 + (row * 2) + 1, 0x00); // High byte
@@ -500,7 +500,7 @@ TEST_F(PPUTest, RenderScanline_SignedTileAddressing)
 
     const auto &fb = ppu.getFrameBuffer();
     // Color index 1 mapped through BGP 0xE4 should yield shade 1
-    for (int x{}; x < 8; ++x)
+    for (int x = 0; x < 8; ++x)
     {
         EXPECT_EQ(fb[x], 1) << "x: " << x << ", fb[x]: " << static_cast<int>(fb[x]);
     }

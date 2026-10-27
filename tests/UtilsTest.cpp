@@ -27,7 +27,7 @@ TEST(UtilsTest, MakeWordAndBytes)
     EXPECT_EQ(actualLow, low);
 }
 
-TEST(BitOperationsTest, GetAndSetBitsWithGenericEnum)
+TEST(UtilsTest, GetAndSetBitsWithGenericEnum)
 {
     uint8_t val = 0x00;
 

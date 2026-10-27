@@ -85,9 +85,9 @@ void PPU::write(uint16_t address, uint8_t value)
     }
     else if (0xff40 == address)
     {
-        bool wasOn{(mLcdc & 0x80) > 0};
+        bool wasOn = (mLcdc & 0x80) > 0;
         mLcdc = value;
-        bool isOn{(mLcdc & 0x80) > 0};
+        bool isOn = (mLcdc & 0x80) > 0;
 
         if (wasOn and !isOn)
         {
@@ -97,7 +97,7 @@ void PPU::write(uint16_t address, uint8_t value)
             mDot = 0;
             mLineRendered = false;
             setMode(PPUMode::HBlank);
-            std::fill(std::begin(mFrameBuffer), std::end(mFrameBuffer), 0);
+            mFrameBuffer.fill(0);
         }
         else if (!wasOn and isOn)
         {
@@ -206,41 +206,41 @@ void PPU::renderBackgroundScanline()
 {
     if (!getBit(mLcdc, LCDC::BgAndWindowEnable))
     {
-        for (int x{}; x < kLcdWidth; ++x)
+        for (int x = 0; x < kLcdWidth; ++x)
         {
             mFrameBuffer[mLy * kLcdWidth + x] = 0;
         }
         return;
     }
 
-    uint16_t mapBase{getBgTilemapAddr()}; // background's tilemap start address
-    const uint8_t bgY{static_cast<uint8_t>(mLy + mScy)};
-    const uint8_t tileMapRow{static_cast<uint8_t>(bgY / kTileSize)};
-    const uint8_t pixelY{static_cast<uint8_t>(bgY % kTileSize)};
+    uint16_t mapBase = getBgTilemapAddr(); // background's tilemap start address
+    const uint8_t bgY = (mLy + mScy) % kTileMapWidthInPx;
+    const uint8_t tileMapRow = bgY / kTileSize;
+    const uint8_t pixelY = bgY % kTileSize;
 
-    for (int x{}; x < kLcdWidth; ++x)
+    for (int x = 0; x < kLcdWidth; ++x)
     {
         // Transform from screen coordinate to tilemap coordinate
-        uint8_t bgX{static_cast<uint8_t>(x + mScx)};
+        uint8_t bgX = (x + mScx) % kTileMapWidthInPx;
 
         // Get tile coordinate in the BG map
-        uint8_t tileMapCol{static_cast<uint8_t>(bgX / kTileSize)};
+        uint8_t tileMapCol = bgX / kTileSize;
 
         // Get tilemap address: base's address + tilemap offset
         // Since the tiles in tilemap is saved as a 1d array
         // We need to convert from 2d -> 1d coordinates
         // Using formula: index = row * WIDTH + col
-        uint16_t mapAddr{static_cast<uint16_t>(mapBase + tileMapRow * kTileMapWidth + tileMapCol)}; // tilemap has 32x32 tiles
+        uint16_t mapAddr = mapBase + tileMapRow * kTileMapWidth + tileMapCol; // tilemap has 32x32 tiles
 
         // Each tile map contains the 1-byte indexes of the tiles to be displayed.
         // Not the data itself.
-        uint8_t tileId{read(mapAddr)};
+        uint8_t tileId = read(mapAddr);
 
         // Current pixel coordinate on the tile
-        uint8_t pixelX{static_cast<uint8_t>(bgX % kTileSize)};
+        uint8_t pixelX = bgX % kTileSize;
 
         auto colorIndex = fetchTileColorIndex(tileId, pixelX, pixelY);
-        uint8_t shade{static_cast<uint8_t>((mBgp >> (colorIndex * 2)) & 0x03)};
+        uint8_t shade = static_cast<uint8_t>((mBgp >> (colorIndex * 2)) & 0x03);
         mFrameBuffer[mLy * kLcdWidth + x] = shade;
     }
 }
@@ -258,27 +258,27 @@ void PPU::renderWindowScanline()
         return;
     }
 
-    int winX{mWx - kWindowXOffset}; // screen x where window starts
-    if (winX >= kLcdWidth)          // window is off-screen to the right
+    int winX = mWx - kWindowXOffset; // screen x where window starts
+    if (winX >= kLcdWidth)           // window is off-screen to the right
     {
         return;
     }
 
-    uint16_t tileMapBase{getWindowTilemapAddr()};
-    for (int x{std::max(winX, 0)}; x < kLcdWidth; ++x)
+    uint16_t tileMapBase = getWindowTilemapAddr();
+    for (int x = std::max(winX, 0); x < kLcdWidth; ++x)
     {
-        int windowPixelX{x - winX};    // x inside the window
-        int windowPixelY{mWindowLine}; // internal window line counter
+        int windowPixelX = x - winX;    // x inside the window
+        int windowPixelY = mWindowLine; // internal window line counter
 
-        int tileRow{windowPixelY / kTileSize}; // row of the tile in window tilemap
-        int tileCol{windowPixelX / kTileSize}; // column of the tile in window tilemap
+        int tileRow = windowPixelY / kTileSize; // row of the tile in window tilemap
+        int tileCol = windowPixelX / kTileSize; // column of the tile in window tilemap
 
-        uint16_t mapAddr{static_cast<uint16_t>(tileMapBase + tileRow * kTileMapWidth + tileCol)};
-        uint8_t tileId{read(mapAddr)};
-        int pixelX{windowPixelX % kTileSize};
-        int pixelY{windowPixelY % kTileSize};
+        uint16_t mapAddr = tileMapBase + tileRow * kTileMapWidth + tileCol;
+        uint8_t tileId = read(mapAddr);
+        int pixelX = windowPixelX % kTileSize;
+        int pixelY = windowPixelY % kTileSize;
         auto colorIndex = fetchTileColorIndex(tileId, pixelX, pixelY);
-        uint8_t shade{static_cast<uint8_t>((mBgp >> (colorIndex * 2)) & 0x03)};
+        uint8_t shade = static_cast<uint8_t>((mBgp >> (colorIndex * 2)) & 0x03);
         mFrameBuffer[mLy * kLcdWidth + x] = shade;
     }
     ++mWindowLine;
@@ -292,8 +292,8 @@ void PPU::renderScanline()
 
 void PPU::updateLyc()
 {
-    bool oldCoincidence{getBit(mStat, Stat::LycEqualsLy)};
-    bool newCoincidence{refreshLycFlag()};
+    bool oldCoincidence = getBit(mStat, Stat::LycEqualsLy);
+    bool newCoincidence = refreshLycFlag();
     if (!oldCoincidence and newCoincidence and getBit(mStat, Stat::LycInterrupt))
     {
         if (mStatInterrupt)
@@ -305,16 +305,16 @@ void PPU::updateLyc()
 
 auto PPU::refreshLycFlag() -> bool
 {
-    bool status{mLy == mLyc};
+    bool status = (mLy == mLyc);
     mStat = setBit(mStat, Stat::LycEqualsLy, status);
     return status;
 }
 
 void PPU::updateModeWithinCurrentLine()
 {
-    bool ret{false};
+    bool ret = false;
 
-    PPUMode oldMode{getMode()};
+    PPUMode oldMode = getMode();
     if (mLy >= kLcdHeight)
     {
         setMode(PPUMode::VBlank);
@@ -338,7 +338,7 @@ void PPU::updateModeWithinCurrentLine()
         mLineRendered = true;
     }
 
-    PPUMode currentMode{getMode()};
+    PPUMode currentMode = getMode();
     if (currentMode != oldMode)
     {
         ret |= PPUMode::OamScan == currentMode and getBit(mStat, Stat::Mode2Interrupt);
@@ -399,10 +399,10 @@ auto PPU::getWindowTilemapAddr() const -> uint16_t
 
 auto PPU::fetchTileColorIndex(uint8_t tileId, int pixelX, int pixelY) const -> uint8_t
 {
-    const uint16_t rowAddr{static_cast<uint16_t>(getTileDataAddress(tileId) + pixelY * 2)};
-    const uint8_t lo{read(rowAddr)};
-    const uint8_t hi{read(static_cast<uint16_t>(rowAddr + 1))};
-    const int bit{7 - pixelX};
-    return static_cast<uint8_t>((((hi >> bit) & 1) << 1) | ((lo >> bit) & 1));
+    const uint16_t rowAddr = getTileDataAddress(tileId) + pixelY * 2;
+    const uint8_t lo = read(rowAddr);
+    const uint8_t hi = read(rowAddr + 1);
+    const int bit = 7 - pixelX;
+    return (((hi >> bit) & 1) << 1) | ((lo >> bit) & 1);
 }
 } // namespace qgb
