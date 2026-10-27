@@ -137,7 +137,8 @@ TEST(TimerTests, TIMAOverflowReloadsFromTMAAndRequestsInterrupt)
     Cartridge cartridge;
     Timer timer;
     Bus bus;
-    bus.init(cartridge, timer); // to set request interrupt callback
+    PPU ppu;
+    bus.init(cartridge, timer, ppu); // to set request interrupt callback
 
     timer.write(0xFF05, 0xFF); // TIMA
     timer.write(0xFF06, 0x42); // TMA

@@ -1,5 +1,6 @@
 #include "Registers.h"
 #include "Utils.h"
+#include <tuple>
 
 namespace qgb
 {
@@ -75,19 +76,12 @@ uint16_t Registers::getSP() const
 
 bool Registers::getFlag(Flag flag) const
 {
-    return ((mF >> static_cast<int>(flag)) & 1) > 0;
+    return getBit(mF, flag);
 }
 
 void Registers::setFlag(Flag flag, bool on)
 {
-    if (on)
-    {
-        mF |= 1 << static_cast<int>(flag);
-    }
-    else
-    {
-        mF &= ~(1 << static_cast<int>(flag));
-    }
+    mF = setBit(mF, flag, on);
 }
 
 void Registers::setPC(uint16_t pc)
@@ -98,25 +92,22 @@ void Registers::setPC(uint16_t pc)
 void Registers::setAF(uint16_t af)
 {
     mA = af >> 8;
-    mF = af & 0xf0;
+    mF = af & 0xf0; // lower 4 bits of flag should always be 0
 }
 
 void Registers::setBC(uint16_t bc)
 {
-    mB = bc >> 8;
-    mC = bc & 0xff;
+    std::tie(mB, mC) = makeBytes(bc);
 }
 
 void Registers::setDE(uint16_t de)
 {
-    mD = de >> 8;
-    mE = de & 0xff;
+    std::tie(mD, mE) = makeBytes(de);
 }
 
 void Registers::setHL(uint16_t hl)
 {
-    mH = hl >> 8;
-    mL = hl & 0xff;
+    std::tie(mH, mL) = makeBytes(hl);
 }
 
 void Registers::setSP(uint16_t sp)
