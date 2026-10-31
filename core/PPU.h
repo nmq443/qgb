@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdint>
 #include <functional>
+#include <span>
 #include <vector>
 
 namespace qgb
@@ -101,6 +102,7 @@ public:
     auto fetchTileColorIndex(uint8_t tileId, int pixelX, int pixelY) const -> uint8_t;
     auto scanOam() const -> std::vector<Sprite>;
     void drawSpriteRow(const Sprite &sprite);
+    void setOam(std::span<const uint8_t, 160> oam);
 
 private:
     bool mIsFrameReady = false;

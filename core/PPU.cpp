@@ -500,4 +500,9 @@ void PPU::drawSpriteRow(const Sprite &sprite)
         }
     }
 }
+
+void PPU::setOam(std::span<const uint8_t, 160> oam)
+{
+    std::ranges::copy(oam, std::begin(mOam));
+}
 } // namespace qgb
