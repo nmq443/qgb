@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdint>
 #include <functional>
+#include <vector>
 
 namespace qgb
 {
@@ -37,7 +38,21 @@ enum class Stat : uint8_t
     LycInterrupt = 6    // bit 6
 };
 
-using Tile = std::array<std::array<uint8_t, 8>, 8>;
+enum class SpriteFlag : uint8_t
+{
+    DMGPalette = 4,
+    XFlip,
+    YFlip,
+    Priority
+};
+
+struct Sprite
+{
+    uint8_t y;
+    uint8_t x;
+    uint8_t tileId;
+    uint8_t flags;
+};
 
 class PPU : public IClockable
 {
@@ -53,6 +68,13 @@ public:
     static constexpr int kTileMapWidthInPx = 256; // tilemap width in pixels
     static constexpr int kTileSize = 8;           // pixels per tile side
     static constexpr int kWindowXOffset = 7;
+    static constexpr int kMaxOamEntries = 40;
+    static constexpr int kObjVerticalOffset = 16;
+    static constexpr int kObjHorizontalOffset = 8;
+    static constexpr int kObjectWidth = 8;
+    static constexpr int kObjectMinHeight = 8;
+    static constexpr int kObjectMaxHeight = 16;
+    static constexpr int kTileSizeInBytes = 16;
 
     PPU() = default;
 
@@ -72,14 +94,17 @@ public:
     void renderScanline();
     void renderBackgroundScanline();
     void renderWindowScanline();
+    void renderOamScanline();
     void updateLyc();
     auto refreshLycFlag() -> bool;
     void updateModeWithinCurrentLine();
     auto fetchTileColorIndex(uint8_t tileId, int pixelX, int pixelY) const -> uint8_t;
+    auto scanOam() const -> std::vector<Sprite>;
+    void drawSpriteRow(const Sprite &sprite);
 
 private:
-    bool mIsFrameReady{false};
-    bool mLineRendered{false};
+    bool mIsFrameReady = false;
+    bool mLineRendered = false;
     uint8_t mLy = 0;
     uint8_t mLyc = 0;
     uint8_t mScx = 0;
@@ -97,6 +122,7 @@ private:
     std::array<uint8_t, 0x2000> mVram = {};
     std::array<uint8_t, 0xa0> mOam = {};
     std::array<uint8_t, kLcdHeight * kLcdWidth> mFrameBuffer = {};
+    std::array<uint8_t, kLcdWidth> mBgColorIndex = {}; // reset each scanline
     PPUMode mMode = PPUMode::HBlank;
     std::function<void()> mStatInterrupt = nullptr;
     std::function<void()> mVBlankInterrupt = nullptr;

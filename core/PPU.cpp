@@ -210,6 +210,7 @@ void PPU::renderBackgroundScanline()
         {
             mFrameBuffer[mLy * kLcdWidth + x] = 0;
         }
+        mBgColorIndex.fill(0);
         return;
     }
 
@@ -240,6 +241,7 @@ void PPU::renderBackgroundScanline()
         uint8_t pixelX = bgX % kTileSize;
 
         auto colorIndex = fetchTileColorIndex(tileId, pixelX, pixelY);
+        mBgColorIndex[x] = colorIndex;
         uint8_t shade = static_cast<uint8_t>((mBgp >> (colorIndex * 2)) & 0x03);
         mFrameBuffer[mLy * kLcdWidth + x] = shade;
     }
@@ -278,16 +280,37 @@ void PPU::renderWindowScanline()
         int pixelX = windowPixelX % kTileSize;
         int pixelY = windowPixelY % kTileSize;
         auto colorIndex = fetchTileColorIndex(tileId, pixelX, pixelY);
+        mBgColorIndex[x] = colorIndex;
         uint8_t shade = static_cast<uint8_t>((mBgp >> (colorIndex * 2)) & 0x03);
         mFrameBuffer[mLy * kLcdWidth + x] = shade;
     }
     ++mWindowLine;
 }
 
+void PPU::renderOamScanline()
+{
+    if (!getBit(mLcdc, LCDC::ObjEnable))
+    {
+        return;
+    }
+
+    auto sprites = scanOam();
+
+    std::stable_sort(sprites.begin(), sprites.end(),
+                     [](const Sprite &a, const Sprite &b)
+                     { return a.x < b.x; });
+
+    for (auto it = sprites.rbegin(); it != sprites.rend(); ++it)
+    {
+        drawSpriteRow(*it);
+    }
+}
+
 void PPU::renderScanline()
 {
     renderBackgroundScanline();
     renderWindowScanline();
+    renderOamScanline();
 }
 
 void PPU::updateLyc()
@@ -404,5 +427,77 @@ auto PPU::fetchTileColorIndex(uint8_t tileId, int pixelX, int pixelY) const -> u
     const uint8_t hi = read(rowAddr + 1);
     const int bit = 7 - pixelX;
     return (((hi >> bit) & 1) << 1) | ((lo >> bit) & 1);
+}
+
+auto PPU::scanOam() const -> std::vector<Sprite>
+{
+    std::vector<Sprite> visible;
+    int height = getBit(mLcdc, LCDC::ObjSize) ? 16 : 8;
+
+    for (int i = 0; i < kMaxOamEntries && visible.size() < 10; ++i)
+    {
+        int base = i * 4;
+        int top = mOam[base] - kObjVerticalOffset; // Y = Object's vertical position on the screen + 16
+        if (mLy >= top and mLy < top + height)
+        {
+            visible.push_back({
+                mOam[base],     // y
+                mOam[base + 1], // x
+                mOam[base + 2], // tileId
+                mOam[base + 3]  // attributes
+            });
+        }
+    }
+
+    return visible;
+}
+
+void PPU::drawSpriteRow(const Sprite &sprite)
+{
+    int height = getBit(mLcdc, LCDC::ObjSize) ? kObjectMaxHeight : kObjectMinHeight;
+    int top = sprite.y - kObjVerticalOffset;
+    int left = sprite.x - kObjHorizontalOffset;
+
+    int row = mLy - top; // 0..16
+    if (getBit(sprite.flags, SpriteFlag::YFlip))
+    {
+        row = height - 1 - row; // flip over full height
+    }
+
+    int tileId = sprite.tileId;
+    if (kObjectMaxHeight == height)
+    {
+        tileId &= 0xfe; // top tile
+        if (row >= kTileSize)
+        {
+            tileId |= 0x01; // bottom tile
+        }
+    }
+    int tileRow = row % kTileSize; // row inside chosen line
+
+    uint16_t addr = 0x8000 + tileId * kTileSizeInBytes + tileRow * 2;
+    uint8_t lo = read(addr);
+    uint8_t hi = read(addr + 1);
+    uint8_t palette = getBit(sprite.flags, SpriteFlag::DMGPalette) ? mObp1 : mObp0;
+
+    for (int col = 0; col < kTileSize; ++col)
+    {
+        int bit = getBit(sprite.flags, SpriteFlag::XFlip) ? col : 7 - col;
+        uint8_t colorIndex = (((hi >> bit) & 1) << 1) | ((lo >> bit) & 1);
+        if (colorIndex == 0)
+        {
+            continue;
+        }
+        int x = left + col;
+        if (x < 0 or x >= kLcdWidth) // off-screen
+        {
+            continue;
+        }
+
+        if (!getBit(sprite.flags, SpriteFlag::Priority) or mBgColorIndex[x] == 0)
+        {
+            mFrameBuffer[mLy * kLcdWidth + x] = (palette >> (colorIndex * 2)) & 3;
+        }
+    }
 }
 } // namespace qgb
