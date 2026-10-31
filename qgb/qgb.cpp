@@ -9,7 +9,7 @@ int main(int, char *[])
     using namespace qgb;
 
     Emulator emu;
-    emu.load("../roms/lyc/lyc.gb");
+    emu.load("../roms/dmg-acid2.gb");
     emu.setSerialCallback([](char c)
                           { std::cout << c << std::flush; });
 
@@ -54,8 +54,6 @@ int main(int, char *[])
         }
 
         emu.step();
-
-        std::cout << "aaa\n";
 
         if (emu.getPPU().isFrameReady())
         {
