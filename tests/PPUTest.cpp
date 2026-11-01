@@ -7,18 +7,18 @@ using namespace qgb;
 
 namespace // addresses of the ppu's registers
 {
-constexpr uint16_t kLcdc = 0xff40;
-constexpr uint16_t kStat = 0xff41;
-constexpr uint16_t kScy = 0xff42;
-constexpr uint16_t kScx = 0xff43;
-constexpr uint16_t kLy = 0xff44;
-constexpr uint16_t kLyc = 0xff45;
-constexpr uint16_t kDma = 0xff46;
-constexpr uint16_t kBgp = 0xff47;
-constexpr uint16_t kObp0 = 0xff48;
-constexpr uint16_t kObp1 = 0xff49;
-constexpr uint16_t kWy = 0xff4a;
-constexpr uint16_t kWx = 0xff4b;
+// constexpr uint16_t PPU::kLcdc = 0xff40;
+// constexpr uint16_t PPU::kStat = 0xff41;
+// constexpr uint16_t kScy = 0xff42;
+// constexpr uint16_t kScx = 0xff43;
+// constexpr uint16_t kLy = 0xff44;
+// constexpr uint16_t kLyc = 0xff45;
+// constexpr uint16_t kDma = 0xff46;
+// constexpr uint16_t kBgp = 0xff47;
+// constexpr uint16_t kObp0 = 0xff48;
+// constexpr uint16_t kObp1 = 0xff49;
+// constexpr uint16_t kWy = 0xff4a;
+// constexpr uint16_t kWx = 0xff4b;
 
 constexpr uint8_t kLcdOn = 0x80;
 } // namespace
@@ -28,21 +28,21 @@ class PPUTest : public ::testing::Test
 protected:
     void turnOn(uint8_t extraBits = 0x11)
     {
-        ppu.write(kLcdc, kLcdOn | extraBits);
+        ppu.write(PPU::PPU::kLcdc, kLcdOn | extraBits);
     }
 
     void turnOff()
     {
-        ppu.write(kLcdc, 0x00);
+        ppu.write(PPU::PPU::kLcdc, 0x00);
     }
 
     PPUMode mode() const
     {
-        return static_cast<PPUMode>(ppu.read(kStat) & 0x03);
+        return static_cast<PPUMode>(ppu.read(PPU::PPU::kStat) & 0x03);
     }
     uint8_t ly() const
     {
-        return ppu.read(kLy);
+        return ppu.read(PPU::kLy);
     }
 
     PPU ppu;
@@ -50,7 +50,11 @@ protected:
 
 TEST_F(PPUTest, PlainRegistersRoundTrip)
 {
-    const std::array<uint16_t, 9> regs = {kScy, kScx, kLyc, kDma, kBgp, kObp0, kObp1, kWy, kWx};
+    const std::array<uint16_t, 9> regs = {
+        PPU::kScy, PPU::kScx, PPU::kLyc,
+        PPU::kDma, PPU::kBgp, PPU::kObp0,
+        PPU::kObp1, PPU::kWy, PPU::kWx};
+
     for (auto reg : regs)
     {
         SCOPED_TRACE(reg);
@@ -63,13 +67,13 @@ TEST_F(PPUTest, PlainRegistersRoundTrip)
 
 TEST_F(PPUTest, LcdcRoundTrip)
 {
-    ppu.write(kLcdc, 0x91);
-    EXPECT_EQ(ppu.read(kLcdc), 0x91);
+    ppu.write(PPU::PPU::kLcdc, 0x91);
+    EXPECT_EQ(ppu.read(PPU::kLcdc), 0x91);
 }
 
 TEST_F(PPUTest, LyIsReadOnly)
 {
-    ppu.write(kLy, 0x42);
+    ppu.write(PPU::kLy, 0x42);
     EXPECT_EQ(ly(), 0);
 }
 
@@ -122,28 +126,28 @@ TEST_F(PPUTest, StatOnlyBits3To6AreWritable)
 {
     // Try to set all bits to 1. Only bits 3-6 should be writable,
     // bit 7 always reads as 1, and mode/coincidence bits (0-2) are read-only.
-    ppu.write(kStat, 0xff);
-    uint8_t stat = ppu.read(kStat);
+    ppu.write(PPU::PPU::kStat, 0xff);
+    uint8_t stat = ppu.read(PPU::PPU::kStat);
     EXPECT_EQ(stat & 0xf8, 0xf8);                     // Bits 3-7
     EXPECT_EQ(stat & 0x03, static_cast<int>(mode())); // Bits 0-1 (PPU mode)
 
     // Try to clear bits 3-6.
-    ppu.write(kStat, 0x00);
-    EXPECT_EQ(ppu.read(kStat) & 0x78, 0x00); // Bits 3-6 should be cleared
+    ppu.write(PPU::PPU::kStat, 0x00);
+    EXPECT_EQ(ppu.read(PPU::PPU::kStat) & 0x78, 0x00); // Bits 3-6 should be cleared
 }
 
 TEST_F(PPUTest, StatLycFlagFollowsComparison)
 {
     turnOn();
-    ppu.write(kLyc, 1);
-    EXPECT_FALSE(ppu.read(kStat) & 0x04); // LY=0, LYC=1
+    ppu.write(PPU::kLyc, 1);
+    EXPECT_FALSE(ppu.read(PPU::PPU::kStat) & 0x04); // LY=0, LYC=1
 
     ppu.tick(PPU::kDotsPerLine); // LY becomes 1
     EXPECT_EQ(ly(), 1);
-    EXPECT_TRUE(ppu.read(kStat) & 0x04); // LY should equals LYC and set 2nd flag of STAT
+    EXPECT_TRUE(ppu.read(PPU::PPU::kStat) & 0x04); // LY should equals LYC and set 2nd flag of STAT
 
-    ppu.tick(PPU::kDotsPerLine);          // LY becomes 2
-    EXPECT_FALSE(ppu.read(kStat) & 0x04); // LY=2, LYC=1
+    ppu.tick(PPU::kDotsPerLine);               // LY becomes 2
+    EXPECT_FALSE(ppu.read(PPU::kStat) & 0x04); // LY=2, LYC=1
 }
 
 TEST_F(PPUTest, TickDoesNothingWhileLcdOff)
@@ -163,7 +167,7 @@ TEST_F(PPUTest, TurningLcdOffResetsLyAndMode)
     turnOff();
     EXPECT_EQ(ly(), 0);
     EXPECT_EQ(mode(), PPUMode::HBlank);
-    EXPECT_EQ(ppu.read(kLcdc) & 0x80, 0); // bit 7 reads back as 0
+    EXPECT_EQ(ppu.read(PPU::kLcdc) & 0x80, 0); // bit 7 reads back as 0
 }
 
 TEST_F(PPUTest, TurningLcdOffDoesNotClearStatInterruptEnables)
@@ -171,9 +175,9 @@ TEST_F(PPUTest, TurningLcdOffDoesNotClearStatInterruptEnables)
     // On hardware only the mode / LYC flag are reset; STAT enable bits are
     // plain game-written state.
     turnOn();
-    ppu.write(kStat, 0x78);
+    ppu.write(PPU::kStat, 0x78);
     turnOff();
-    EXPECT_EQ(ppu.read(kStat) & 0x78, 0x78);
+    EXPECT_EQ(ppu.read(PPU::kStat) & 0x78, 0x78);
 }
 
 TEST_F(PPUTest, TurningLcdOffClearsFrameBuffer)
@@ -206,7 +210,7 @@ TEST_F(PPUTest, WritingLcdcWithBit7StillSetDoesNotRestartPpu)
     turnOn(0x01);
     ppu.tick(PPU::kDotsPerLine * 2);
     ASSERT_EQ(ly(), 2);
-    ppu.write(kLcdc, kLcdOn | 0x10); // change other bits, LCD stays on
+    ppu.write(PPU::kLcdc, kLcdOn | 0x10); // change other bits, LCD stays on
     EXPECT_EQ(ly(), 2);
 }
 
@@ -285,7 +289,7 @@ TEST_F(PPUTest, TwoFramesBehaveIdentically)
 TEST_F(PPUTest, TickInSmallStepsMatchesOneBigTick)
 {
     PPU other;
-    other.write(kLcdc, 0x91);
+    other.write(PPU::kLcdc, 0x91);
     turnOn(0x11);
 
     const int total = PPU::kDotsPerLine * 50 + 123;
@@ -294,8 +298,8 @@ TEST_F(PPUTest, TickInSmallStepsMatchesOneBigTick)
     {
         other.tick(1);
     }
-    EXPECT_EQ(ppu.read(kLy), other.read(kLy));
-    EXPECT_EQ(ppu.read(kStat), other.read(kStat));
+    EXPECT_EQ(ppu.read(PPU::kLy), other.read(PPU::kLy));
+    EXPECT_EQ(ppu.read(PPU::kStat), other.read(PPU::kStat));
 }
 
 TEST_F(PPUTest, TickZeroIsNoOp)
@@ -336,8 +340,8 @@ TEST_F(PPUTest, StatInterruptFiresOnLycMatch)
     ppu.setStatInterrupt([&]
                          { ++count; });
     turnOn();
-    ppu.write(kStat, 0x40); // LYC interrupt enable
-    ppu.write(kLyc, 2);
+    ppu.write(PPU::kStat, 0x40); // LYC interrupt enable
+    ppu.write(PPU::kLyc, 2);
 
     ppu.tick(PPU::kDotsPerLine * 2);
     EXPECT_EQ(count, 1);
@@ -351,7 +355,7 @@ TEST_F(PPUTest, StatInterruptFiresOnHBlank)
     ppu.setStatInterrupt([&]
                          { ++count; });
     turnOn();
-    ppu.write(kStat, 0x08); // mode 0 interrupt enable
+    ppu.write(PPU::kStat, 0x08); // mode 0 interrupt enable
     ppu.tick(PPU::kOamScanDots + PPU::kDrawingDots);
     EXPECT_EQ(count, 1);
 }
@@ -362,7 +366,7 @@ TEST_F(PPUTest, StatInterruptIsEdgeTriggered)
     ppu.setStatInterrupt([&]
                          { ++count; });
     turnOn();
-    ppu.write(kStat, 0x10);                            // VBlank interrupt enable
+    ppu.write(PPU::kStat, 0x10);                       // VBlank interrupt enable
     ppu.tick(PPU::kDotsPerLine * PPU::kLinesPerFrame); // whole VBlank period
     EXPECT_EQ(count, 1);                               // fires once on entering VBlank, not every tick
 }
@@ -371,7 +375,7 @@ TEST_F(PPUTest, NullStatCallbackDoesNotCrash)
 {
     // this test exists because i do not wire any stat callback into ppu
     turnOn();
-    ppu.write(kStat, 0x78);
+    ppu.write(PPU::kStat, 0x78);
     EXPECT_NO_FATAL_FAILURE(ppu.tick(PPU::kDotsPerLine * PPU::kLinesPerFrame));
 }
 

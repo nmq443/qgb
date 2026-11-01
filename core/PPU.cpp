@@ -9,59 +9,40 @@ auto PPU::read(uint16_t address) const -> uint8_t
     {
         return mVram[address - 0x8000];
     }
-    else if (0xfe00 <= address && address <= 0xfe9f) // oam
+    if (0xfe00 <= address && address <= 0xfe9f) // oam
     {
         return mOam[address - 0xfe00];
     }
-    else if (0xff44 == address)
+
+    switch (address)
     {
-        return mLy;
-    }
-    else if (0xff45 == address)
-    {
-        return mLyc;
-    }
-    else if (0xff40 == address)
-    {
+    case kLcdc:
         return mLcdc;
-    }
-    else if (0xff41 == address)
-    {
+    case kStat:
         return mStat;
-    }
-    else if (0xff46 == address)
-    {
-        return mDma;
-    }
-    else if (0xff4a == address)
-    {
-        return mWy;
-    }
-    else if (0xff4b == address)
-    {
-        return mWx;
-    }
-    else if (0xff42 == address)
-    {
+    case kScy:
         return mScy;
-    }
-    else if (0xff43 == address)
-    {
+    case kScx:
         return mScx;
-    }
-    else if (0xff47 == address)
-    {
+    case kLy:
+        return mLy;
+    case kLyc:
+        return mLyc;
+    case kDma:
+        return mDma;
+    case kBgp:
         return mBgp;
-    }
-    else if (0xff48 == address)
-    {
+    case kObp0:
         return mObp0;
-    }
-    else if (0xff49 == address)
-    {
+    case kObp1:
         return mObp1;
+    case kWy:
+        return mWy;
+    case kWx:
+        return mWx;
+    default:
+        return 0;
     }
-    return 0;
 }
 
 void PPU::write(uint16_t address, uint8_t value)
@@ -69,21 +50,24 @@ void PPU::write(uint16_t address, uint8_t value)
     if (0x8000 <= address && address <= 0x9fff) // video ram
     {
         mVram[address - 0x8000] = value;
+        return;
     }
-    else if (0xfe00 <= address && address <= 0xfe9f) // oam
+    if (0xfe00 <= address && address <= 0xfe9f) // oam
     {
         mOam[address - 0xfe00] = value;
+        return;
     }
-    else if (0xff44 == address)
+
+    switch (address)
     {
+    case kLy:
         // mLy = value; ly is read only
-    }
-    else if (0xff45 == address)
-    {
+        break;
+    case kLyc:
         mLyc = value;
         updateLyc();
-    }
-    else if (0xff40 == address)
+        break;
+    case kLcdc:
     {
         bool wasOn = (mLcdc & 0x80) > 0;
         mLcdc = value;
@@ -106,42 +90,37 @@ void PPU::write(uint16_t address, uint8_t value)
             mDot = 0;
             setMode(PPUMode::OamScan);
         }
+        break;
     }
-    else if (0xff41 == address)
-    {
+    case kStat:
         mStat = (mStat & 0b0000'0111) | (value & 0b1111'1000);
-    }
-    else if (0xff46 == address)
-    {
+        break;
+    case kDma:
         mDma = value;
-    }
-    else if (0xff4a == address)
-    {
+        break;
+    case kWy:
         mWy = value;
-    }
-    else if (0xff4b == address)
-    {
+        break;
+    case kWx:
         mWx = value;
-    }
-    else if (0xff42 == address)
-    {
+        break;
+    case kScy:
         mScy = value;
-    }
-    else if (0xff43 == address)
-    {
+        break;
+    case kScx:
         mScx = value;
-    }
-    else if (0xff47 == address)
-    {
+        break;
+    case kBgp:
         mBgp = value;
-    }
-    else if (0xff48 == address)
-    {
+        break;
+    case kObp0:
         mObp0 = value;
-    }
-    else if (0xff49 == address)
-    {
+        break;
+    case kObp1:
         mObp1 = value;
+        break;
+    default:
+        break;
     }
 }
 

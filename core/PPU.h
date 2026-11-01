@@ -77,6 +77,19 @@ public:
     static constexpr int kObjectMaxHeight = 16;
     static constexpr int kTileSizeInBytes = 16;
 
+    static constexpr uint16_t kLcdc = 0xff40;
+    static constexpr uint16_t kStat = 0xff41;
+    static constexpr uint16_t kScy = 0xff42;
+    static constexpr uint16_t kScx = 0xff43;
+    static constexpr uint16_t kLy = 0xff44;
+    static constexpr uint16_t kLyc = 0xff45;
+    static constexpr uint16_t kDma = 0xff46;
+    static constexpr uint16_t kBgp = 0xff47;
+    static constexpr uint16_t kObp0 = 0xff48;
+    static constexpr uint16_t kObp1 = 0xff49;
+    static constexpr uint16_t kWy = 0xff4a;
+    static constexpr uint16_t kWx = 0xff4b;
+
     PPU() = default;
 
     auto read(uint16_t address) const -> uint8_t;
