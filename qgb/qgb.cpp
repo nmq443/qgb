@@ -4,12 +4,22 @@
 #include <SDL3/SDL_main.h>
 #include <iostream>
 
-int main(int, char *[])
+int main(int argc, char **argv)
 {
     using namespace qgb;
 
+    std::filesystem::path romPath;
+    if (argc < 2)
+    {
+        romPath = "../roms/dmg-acid2.gb"; // default to this rom
+    }
+    else
+    {
+        romPath = argv[1];
+    }
+
     Emulator emu;
-    emu.load("../roms/dmg-acid2.gb");
+    emu.load(romPath);
     emu.setSerialCallback([](char c)
                           { std::cout << c << std::flush; });
 
@@ -19,17 +29,15 @@ int main(int, char *[])
         return 1;
     }
 
-    constexpr int WIDTH = PPU::kLcdWidth;
-    constexpr int HEIGHT = PPU::kLcdHeight;
-    constexpr int SCALE = 5;
+    constexpr int kScale = 5;
 
-    std::array<uint32_t, WIDTH * HEIGHT> pixels; // converted ARGB
+    std::array<uint32_t, PPU::kLcdWidth * PPU::kLcdHeight> pixels; // converted ARGB
     constexpr uint32_t SHADES[4] = {0xFFE0F8D0, 0xFF88C070, 0xFF346856, 0xFF081820};
 
     SDL_Window *window = nullptr;
     SDL_Renderer *renderer = nullptr;
 
-    if (!SDL_CreateWindowAndRenderer("Buffer", WIDTH * SCALE, HEIGHT * SCALE,
+    if (!SDL_CreateWindowAndRenderer("Buffer", PPU::kLcdWidth * kScale, PPU::kLcdHeight * kScale,
                                      0, &window, &renderer))
     {
         SDL_Log("Create failed: %s", SDL_GetError());
@@ -38,7 +46,7 @@ int main(int, char *[])
 
     SDL_Texture *texture = SDL_CreateTexture(
         renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
-        WIDTH, HEIGHT);
+        PPU::kLcdWidth, PPU::kLcdHeight);
     SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST); // crisp pixels
 
     bool running = true;
@@ -62,9 +70,9 @@ int main(int, char *[])
                            { return SHADES[pixel]; });
 
             SDL_UpdateTexture(texture, nullptr, pixels.data(),
-                              WIDTH * sizeof(uint32_t)); // pitch in bytes
+                              PPU::kLcdWidth * sizeof(uint32_t)); // pitch in bytes
             SDL_RenderClear(renderer);
-            SDL_FRect dst{0.0f, 0.0f, WIDTH * SCALE, HEIGHT * SCALE};
+            SDL_FRect dst{0.0f, 0.0f, PPU::kLcdWidth * kScale, PPU::kLcdHeight * kScale};
             SDL_RenderTexture(renderer, texture, nullptr, &dst);
             SDL_RenderPresent(renderer);
 

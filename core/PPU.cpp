@@ -1,5 +1,6 @@
 #include "PPU.h"
 #include "Utils.h"
+#include <algorithm>
 
 namespace qgb
 {
