@@ -1,4 +1,7 @@
 #include "Utils.h"
+#include <cerrno>
+#include <cstring>
+#include <format>
 #include <fstream>
 
 namespace qgb
@@ -18,7 +21,8 @@ std::vector<uint8_t> readGbRom(const std::filesystem::path &filepath)
     std::ifstream file(filepath, std::ios::binary);
     if (!file.is_open())
     {
-        throw std::runtime_error("Failed to open file: " + filepath.string());
+        std::string msg{std::format("Failed to open file: {}. \nError code: {}", filepath.string(), std::strerror(errno))};
+        throw std::runtime_error(msg);
     }
 
     auto size = std::filesystem::file_size(filepath);

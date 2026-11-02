@@ -1,4 +1,6 @@
 #include "Bus.h"
+#include <algorithm>
+#include <ranges>
 
 namespace qgb
 {
@@ -17,16 +19,29 @@ void InterruptController::clear(uint8_t bit)
     IF &= ~(1 << bit);
 }
 
-void Bus::init(Cartridge &cartridge, Timer &timer)
+void Bus::init(Cartridge &cartridge, Timer &timer, PPU &ppu)
 {
     mCartridgePtr = &cartridge;
     mTimerPtr = &timer;
+    mPPUPtr = &ppu;
 
     auto timerInterrupt = [this]()
     {
         raiseInterrupt(Interrupt::Timer);
     };
     mTimerPtr->setTimerInterrupt(timerInterrupt);
+
+    auto statInterrupt = [this]()
+    {
+        raiseInterrupt(Interrupt::Lcd);
+    };
+    mPPUPtr->setStatInterrupt(statInterrupt);
+
+    auto vblankInterrupt = [this]()
+    {
+        raiseInterrupt(Interrupt::VBlank);
+    };
+    mPPUPtr->setVBlankInterrupt(vblankInterrupt);
 }
 
 uint8_t Bus::read(uint16_t address) const
@@ -35,9 +50,9 @@ uint8_t Bus::read(uint16_t address) const
     {
         return mCartridgePtr->read(address);
     }
-    else if (0x8000 <= address && address <= 0x9fff) // video ram
+    else if ((0x8000 <= address && address <= 0x9fff) or (0xfe00 <= address && address <= 0xfe9f)) // video ram or oam
     {
-        return mVram[address - 0x8000];
+        return mPPUPtr->read(address);
     }
     else if (0xc000 <= address && address <= 0xdfff) // wram
     {
@@ -46,10 +61,6 @@ uint8_t Bus::read(uint16_t address) const
     else if (0xe000 <= address && address <= 0xfdff) // echo ram (mirror of 0xc000 - 0xddff)
     {
         return mWram[address - 0xe000];
-    }
-    else if (0xfe00 <= address && address <= 0xfe9f) // oam
-    {
-        return mOam[address - 0xfe00];
     }
     else if (0xfea0 <= address && address <= 0xfeff) // not usable
     {
@@ -65,6 +76,10 @@ uint8_t Bus::read(uint16_t address) const
         else if (0xff04 <= address && address <= 0xff07)
         {
             return mTimerPtr->read(address);
+        }
+        else if (0xff40 <= address && address <= 0xff4b) // ppu's registers
+        {
+            return mPPUPtr->read(address);
         }
         return mIoRegs[address - 0xff00];
     }
@@ -85,9 +100,9 @@ void Bus::write(uint16_t address, uint8_t value)
     {
         mCartridgePtr->write(address, value);
     }
-    else if (0x8000 <= address && address <= 0x9fff) // video ram
+    else if ((0x8000 <= address && address <= 0x9fff) or (0xfe00 <= address && address <= 0xfe9f)) // video ram or oam
     {
-        mVram[address - 0x8000] = value;
+        mPPUPtr->write(address, value);
     }
     else if (0xc000 <= address && address <= 0xdfff) // wram
     {
@@ -96,10 +111,6 @@ void Bus::write(uint16_t address, uint8_t value)
     else if (0xe000 <= address && address <= 0xfdff) // echo ram (mirror of 0xc000 - 0xddff)
     {
         mWram[address - 0xe000] = value;
-    }
-    else if (0xfe00 <= address && address <= 0xfe9f) // oam
-    {
-        mOam[address - 0xfe00] = value;
     }
     else if (0xfea0 <= address && address <= 0xfeff) // not usable
     {
@@ -114,6 +125,18 @@ void Bus::write(uint16_t address, uint8_t value)
         else if (0xff04 <= address && address <= 0xff07)
         {
             mTimerPtr->write(address, value);
+        }
+        else if (0xff40 <= address && address <= 0xff4b) // ppu's registers
+        {
+            if (0xff46 == address)
+            {
+                uint16_t src = value << 8;
+                std::array<uint8_t, 160> oam = {};
+                std::ranges::transform(std::views::iota(0, 160), oam.begin(), [this, src](int i)
+                                       { return read(src + i); });
+                mPPUPtr->setOam(oam);
+            }
+            mPPUPtr->write(address, value);
         }
         else
         {
