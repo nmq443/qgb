@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <format>
 #include <stdexcept>
+#include <print>
+
+//#define CPU_TRACE
 
 namespace qgb
 {
@@ -21,6 +24,23 @@ CPU::~CPU()
 
 void CPU::step()
 {
+#ifdef CPU_TRACE
+    std::println("A:{:02X} F:{:02X} B:{:02X} C:{:02X} D:{:02X} E:{:02X} H:{:02X} L:{:02X} SP:{:04X} PC:{:04X} PCMEM:{:02X},{:02X},{:02X},{:02X}",
+                 mRegisters.getA(),
+                 mRegisters.getF(),
+                 mRegisters.getB(),
+                 mRegisters.getC(),
+                 mRegisters.getD(),
+                 mRegisters.getE(),
+                 mRegisters.getH(),
+                 mRegisters.getL(),
+                 mRegisters.getSP(),
+                 mRegisters.getPC(),
+                 mBusPtr->read(mRegisters.getPC()),
+                 mBusPtr->read(mRegisters.getPC() + 1), // Fixed index offset here
+                 mBusPtr->read(mRegisters.getPC() + 2),
+                 mBusPtr->read(mRegisters.getPC() + 3));
+#endif
     auto &ic = mBusPtr->getInterruptController();
     if (ic.pending())
     {
