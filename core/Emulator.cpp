@@ -64,4 +64,8 @@ auto Emulator::getPPU() -> PPU &
     return mPPU;
 }
 
+void Emulator::setJoypadState(JoypadState state)
+{
+    mBus.setJoypadState(state);
+}
 } // namespace qgb

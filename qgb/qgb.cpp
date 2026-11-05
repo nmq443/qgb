@@ -65,6 +65,16 @@ int main(int argc, char **argv)
 
         if (emu.getPPU().isFrameReady())
         {
+            const bool *keystate = SDL_GetKeyboardState(nullptr);
+            emu.setJoypadState({keystate[SDL_SCANCODE_X],
+                                keystate[SDL_SCANCODE_Z],
+                                keystate[SDL_SCANCODE_RETURN],
+                                keystate[SDL_SCANCODE_RSHIFT],
+                                keystate[SDL_SCANCODE_LEFT],
+                                keystate[SDL_SCANCODE_RIGHT],
+                                keystate[SDL_SCANCODE_UP],
+                                keystate[SDL_SCANCODE_DOWN]});
+
             const auto &frameBuffer = emu.getPPU().getFrameBuffer();
             std::transform(frameBuffer.begin(), frameBuffer.end(), pixels.begin(), [&SHADES](auto pixel)
                            { return SHADES[pixel]; });

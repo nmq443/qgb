@@ -20,6 +20,7 @@ public:
     void setSerialCallback(SerialCallback cb);
     auto getPPU() const -> const PPU &;
     auto getPPU() -> PPU &;
+    void setJoypadState(JoypadState state);
 
 private:
     void pollSerial();

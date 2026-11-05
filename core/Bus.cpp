@@ -81,6 +81,10 @@ uint8_t Bus::read(uint16_t address) const
         {
             return mPPUPtr->read(address);
         }
+        else if (0xff00 == address) // p1/joyp
+        {
+            return mJp.getJp();
+        }
         return mIoRegs[address - 0xff00];
     }
     else if (0xff80 <= address && address <= 0xfffe) // hram
@@ -138,6 +142,10 @@ void Bus::write(uint16_t address, uint8_t value)
             }
             mPPUPtr->write(address, value);
         }
+        else if (0xff00 == address) // p1/joyp
+        {
+            mJp.setJp(value);
+        }
         else
         {
             mIoRegs[address - 0xff00] = value;
@@ -172,5 +180,10 @@ Bus::~Bus()
 {
     mTimerPtr = nullptr;
     mCartridgePtr = nullptr;
+}
+
+void Bus::setJoypadState(JoypadState state)
+{
+    mJp.setState(state);
 }
 } // namespace qgb
