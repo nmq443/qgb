@@ -8,6 +8,7 @@
 int main(int argc, char **argv)
 {
     using namespace qgb;
+    int scale = 5; // default scale
 
     std::filesystem::path romPath;
     if (argc < 2)
@@ -17,6 +18,7 @@ int main(int argc, char **argv)
     else
     {
         romPath = argv[1];
+        scale = std::stoi(argv[2]);
     }
 
     Emulator emu;
@@ -30,15 +32,13 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    constexpr int kScale = 5;
-
     std::array<uint32_t, PPU::kLcdWidth * PPU::kLcdHeight> pixels; // converted ARGB
     constexpr uint32_t SHADES[4] = {0xFFE0F8D0, 0xFF88C070, 0xFF346856, 0xFF081820};
 
     SDL_Window *window = nullptr;
     SDL_Renderer *renderer = nullptr;
 
-    if (!SDL_CreateWindowAndRenderer("Buffer", PPU::kLcdWidth * kScale, PPU::kLcdHeight * kScale,
+    if (!SDL_CreateWindowAndRenderer("Buffer", PPU::kLcdWidth * scale, PPU::kLcdHeight * scale,
                                      0, &window, &renderer))
     {
         SDL_Log("Create failed: %s", SDL_GetError());
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
             SDL_UpdateTexture(texture, nullptr, pixels.data(),
                               PPU::kLcdWidth * sizeof(uint32_t)); // pitch in bytes
             SDL_RenderClear(renderer);
-            SDL_FRect dst{0.0f, 0.0f, PPU::kLcdWidth * kScale, PPU::kLcdHeight * kScale};
+            SDL_FRect dst{0.0f, 0.0f, static_cast<float>(PPU::kLcdWidth * scale), static_cast<float>(PPU::kLcdHeight * scale)};
             SDL_RenderTexture(renderer, texture, nullptr, &dst);
             SDL_RenderPresent(renderer);
 
