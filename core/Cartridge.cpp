@@ -17,4 +17,9 @@ void Cartridge::write(uint16_t, uint8_t)
 {
     /* ignored for now, no MBC support yet */
 }
+
+auto Cartridge::hasRom() -> bool
+{
+    return mRom.size() > 0;
+}
 } // namespace qgb

@@ -21,6 +21,7 @@ public:
     auto getPPU() const -> const PPU &;
     auto getPPU() -> PPU &;
     void setJoypadState(JoypadState state);
+    auto hasRom() -> bool;
 
 private:
     void pollSerial();
