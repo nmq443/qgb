@@ -68,4 +68,9 @@ void Emulator::setJoypadState(JoypadState state)
 {
     mBus.setJoypadState(state);
 }
+
+auto Emulator::hasRom() -> bool
+{
+    return mCartridge.hasRom();
+}
 } // namespace qgb

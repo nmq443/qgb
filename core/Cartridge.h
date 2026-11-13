@@ -13,6 +13,7 @@ public:
     void load(const std::filesystem::path &path);
     [[nodiscard]] uint8_t read(uint16_t address) const;
     void write(uint16_t address, uint8_t value);
+    auto hasRom() -> bool;
 
 private:
     std::vector<uint8_t> mRom;
