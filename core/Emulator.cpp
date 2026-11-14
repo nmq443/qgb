@@ -5,7 +5,7 @@ namespace qgb
 {
 Emulator::Emulator()
 {
-    mBus.init(mCartridge, mTimer, mPPU);
+    mBus.init(mCartridge, mTimer, mPPU, mAPU);
     mCPU.init(mBus, mClock);
     mClock.addDevice(mTimer);
     mClock.addDevice(mPPU);
