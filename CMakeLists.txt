@@ -56,5 +56,9 @@ add_subdirectory(tests)
 
 install(TARGETS qgb RUNTIME DESTINATION .)
 install(FILES README.md DESTINATION .)
+
 set(CPACK_GENERATOR "ZIP;TGZ")
-include(CPack)
+string(TOLOWER "${CMAKE_CXX_COMPILER_ID}" QGB_COMPILER)   # gnu, clang, msvc
+set(CPACK_PACKAGE_FILE_NAME
+    "qgb-${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}-${QGB_COMPILER}")
+include(CPack)   # must come after these set() calls
