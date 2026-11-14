@@ -1,4 +1,4 @@
-set(TEST_TARGETS RegistersTest UtilsTest RomsTest TimerTest PPUTest)
+set(TEST_TARGETS RegistersTest UtilsTest RomsTest TimerTest PPUTest APUTest)
 
 include(GoogleTest)
 

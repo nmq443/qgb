@@ -29,6 +29,7 @@ private:
     CPU mCPU;
     PPU mPPU;
     Timer mTimer;
+    APU mAPU;
     Cartridge mCartridge;
     Bus mBus;
     Clock mClock;

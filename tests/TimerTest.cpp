@@ -138,7 +138,8 @@ TEST(TimerTests, TIMAOverflowReloadsFromTMAAndRequestsInterrupt)
     Timer timer;
     Bus bus;
     PPU ppu;
-    bus.init(cartridge, timer, ppu); // to set request interrupt callback
+    APU apu;
+    bus.init(cartridge, timer, ppu, apu); // to set request interrupt callback
 
     timer.write(0xFF05, 0xFF); // TIMA
     timer.write(0xFF06, 0x42); // TMA

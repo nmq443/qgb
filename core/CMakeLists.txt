@@ -8,4 +8,5 @@ add_library(core STATIC
         Timer.cpp
         Clock.cpp
         PPU.cpp
-        Joypad.cpp)
+        Joypad.cpp
+        APU.cpp)

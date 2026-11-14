@@ -14,7 +14,7 @@ static const SDL_DialogFileFilter kRomFilters[] = {
     {"Game Boy ROMs", "gb;gbc"},
     {"All files", "*"}};
 
-static void onRomSelected(void *userdata, const char *const *filelist, int filter)
+static void onRomSelected(void *, const char *const *filelist, int)
 {
     if (!filelist)
     {
@@ -36,7 +36,7 @@ static void openDialog(SDL_Window *window)
     SDL_ShowOpenFileDialog(onRomSelected, nullptr, window, kRomFilters, SDL_arraysize(kRomFilters), nullptr, false);
 }
 
-int main(int argc, char **argv)
+int main(int, char **)
 {
     using namespace qgb;
     constexpr int kScale = 5;

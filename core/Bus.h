@@ -1,5 +1,6 @@
 #pragma once
 
+#include "APU.h"
 #include "Cartridge.h"
 #include "Joypad.h"
 #include "PPU.h"
@@ -32,7 +33,7 @@ class Bus
 {
 public:
     Bus() = default;
-    void init(Cartridge &cartridge, Timer &timer, PPU &ppu);
+    void init(Cartridge &cartridge, Timer &timer, PPU &ppu, APU &apu);
     [[nodiscard]] uint8_t read(uint16_t address) const;
     void write(uint16_t address, uint8_t value);
     const InterruptController &getInterruptController() const;
@@ -46,6 +47,7 @@ private:
     Cartridge *mCartridgePtr = nullptr; // non-owning
     Timer *mTimerPtr = nullptr;         // non-owning
     PPU *mPPUPtr = nullptr;             // non-owning
+    APU *mAPUPtr = nullptr;             // non-owning
     InterruptController mIC;
     std::array<uint8_t, 0x2000> mVram = {};
     std::array<uint8_t, 0x2000> mWram = {};
