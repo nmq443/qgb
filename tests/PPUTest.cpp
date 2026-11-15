@@ -5,21 +5,8 @@
 
 using namespace qgb;
 
-namespace // addresses of the ppu's registers
+namespace
 {
-// constexpr uint16_t PPU::kLcdc = 0xff40;
-// constexpr uint16_t PPU::kStat = 0xff41;
-// constexpr uint16_t kScy = 0xff42;
-// constexpr uint16_t kScx = 0xff43;
-// constexpr uint16_t kLy = 0xff44;
-// constexpr uint16_t kLyc = 0xff45;
-// constexpr uint16_t kDma = 0xff46;
-// constexpr uint16_t kBgp = 0xff47;
-// constexpr uint16_t kObp0 = 0xff48;
-// constexpr uint16_t kObp1 = 0xff49;
-// constexpr uint16_t kWy = 0xff4a;
-// constexpr uint16_t kWx = 0xff4b;
-
 constexpr uint8_t kLcdOn = 0x80;
 } // namespace
 
