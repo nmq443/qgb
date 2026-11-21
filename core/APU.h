@@ -2,6 +2,7 @@
 
 #include "IClockable.h"
 #include <array>
+#include <atomic>
 #include <cstdint>
 
 namespace qgb
@@ -33,6 +34,31 @@ struct Channel
     uint16_t length = 0; // CH3 need up to 256
 };
 
+struct AudioRing
+{
+    static constexpr size_t kCapacity = 8192;
+    std::array<float, kCapacity * 2> data = {};
+    std::atomic<size_t> readPos = 0;
+    std::atomic<size_t> writePos = 0;
+
+    auto available() const -> size_t { return writePos - readPos; }
+    void push(float l, float r)
+    {
+        data[writePos++] = 100.0;
+    }
+    auto pop(float *out, size_t frames) -> size_t
+    {
+        size_t actual = 0;
+        for (size_t i = readPos; i < writePos and (i - readPos) < frames; ++i)
+        {
+            out[i - readPos] = 100.0;
+            ++actual;
+        }
+        readPos += actual;
+        return actual;
+    }
+};
+
 class APU : public IClockable
 {
 public:
@@ -62,6 +88,8 @@ public:
     static constexpr uint16_t kNR50 = 0xff24;
     static constexpr uint16_t kNR52 = 0xff26;
 
+    static constexpr double kCyclesPerSample = 4194304.0 / 48000;
+
     static constexpr std::array<uint8_t, 0x17> kReadMask = {
         0x80, 0x3f, 0x00, 0xff, 0xbf, // NR10-14
         0xff, 0x3f, 0x00, 0xff, 0xbf, // 0xff15 (unused), NR21-24
@@ -77,10 +105,14 @@ public:
     void write(uint16_t address, uint8_t value);
     void powerOff();
     auto getChannel(uint8_t index) const -> const Channel &;
+    void pushSample();
+    auto getRingBuffer() -> AudioRing &;
 
 private:
     std::array<uint8_t, 23> mRegs{};
     std::array<uint8_t, 16> mWaveRam = {};
     std::array<Channel, 4> mChannels = {}; // CH1..4
+    int mSampleTimer = 0;
+    AudioRing mRing;
 };
 } // namespace qgb

@@ -3,8 +3,14 @@
 
 namespace qgb
 {
-void APU::tick(int)
+void APU::tick(int tCycles)
 {
+    mSampleTimer += tCycles;
+    while (mSampleTimer >= kCyclesPerSample)
+    {
+        mSampleTimer -= kCyclesPerSample;
+        pushSample();
+    }
 }
 
 auto APU::read(uint16_t address) const -> uint8_t
@@ -99,5 +105,25 @@ void APU::powerOff()
 auto APU::getChannel(uint8_t index) const -> const Channel &
 {
     return mChannels[index];
+}
+
+void APU::pushSample()
+{
+    constexpr double kFreq = 440.0;
+    static double phase = 0.0;
+
+    float s = (phase < 0.5) ? 0.25f : -0.25f;
+    phase += kFreq / 4800;
+    if (phase >= 1.0)
+    {
+        phase -= 1.0;
+    }
+
+    mRing.push(s, s);
+}
+
+auto APU::getRingBuffer() -> AudioRing &
+{
+    return mRing;
 }
 } // namespace qgb
