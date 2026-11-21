@@ -3,8 +3,57 @@
 
 namespace qgb
 {
-void APU::tick(int)
+auto AudioRing::available() const -> size_t
 {
+    return writePos.load(std::memory_order_acquire) - readPos.load(std::memory_order_acquire);
+}
+
+auto AudioRing::push(float l, float r) -> bool
+{
+    size_t currentWritePos = writePos.load(std::memory_order_relaxed); // emulator thread control writePos (via push())
+    size_t currentReadPos = readPos.load(std::memory_order_acquire);   // audio thread control readPos (via pop())
+
+    if (currentWritePos - currentReadPos == kCapacity)
+    {
+        return false; // full
+    }
+
+    size_t i = (currentWritePos & kMask) * 2; // the same as (currentWritePos % kCapacity) * 2, but using bitwise operation)
+    data[i] = l;
+    data[i + 1] = r;
+
+    writePos.store(currentWritePos + 1, std::memory_order_release);
+    return true;
+}
+
+auto AudioRing::pop(float *out, size_t frames) -> size_t
+{
+    size_t currentReadPos = readPos.load(std::memory_order_relaxed);   // audio thread control readPos (via pop())
+    size_t currentWritePos = writePos.load(std::memory_order_acquire); // emulator thread control writePos (via push())
+
+    size_t avail = currentWritePos - currentReadPos;
+    size_t n = frames < avail ? frames : avail;
+
+    for (size_t k = 0; k < n; ++k)
+    {
+        size_t i = ((currentReadPos + k) & kMask) * 2; // the same as (((currentReadPos + k) % kCapacity) * 2, but using bitwise operation)
+        out[k * 2] = data[i];
+        out[k * 2 + 1] = data[i + 1];
+    }
+
+    readPos.store(currentReadPos + n, std::memory_order_release);
+    return n;
+}
+
+void APU::tick(int tCycles)
+{
+    mRegs[kNR51 - kBaseAddr] = 0x01;
+    mSampleTimer += tCycles;
+    while (mSampleTimer >= kCyclesPerSample)
+    {
+        mSampleTimer -= kCyclesPerSample;
+        pushSample();
+    }
 }
 
 auto APU::read(uint16_t address) const -> uint8_t
@@ -74,14 +123,16 @@ void APU::write(uint16_t address, uint8_t value)
     case kNR41:
         mChannels[3].length = length;
         break;
-    default: // channel 3
+    case kNR31:
         mChannels[2].length = 256 - value;
+        break;
+    default:
         break;
     }
 
     if (wasOn)
     {
-        mRegs[address - 0xff10] = value;
+        mRegs[address - kBaseAddr] = value;
     }
 }
 
@@ -99,5 +150,68 @@ void APU::powerOff()
 auto APU::getChannel(uint8_t index) const -> const Channel &
 {
     return mChannels[index];
+}
+
+float testSquareWave()
+{
+    constexpr double kFreq = 440.0;
+    static double phase = 0.0;
+
+    float s = (phase < 0.5) ? 0.25f : -0.25f;
+    phase += kFreq / 48000;
+    if (phase >= 1.0)
+    {
+        phase -= 1.0;
+    }
+    return s;
+}
+
+float APU::ch1Output() { return testSquareWave(); } // your hardcoded wave
+float APU::ch2Output() { return 0.0f; }
+float APU::ch3Output() { return 0.0f; }
+float APU::ch4Output() { return 0.0f; }
+
+void APU::pushSample()
+{
+    // Each channel returns a float in [-1, 1] (0.0 if disabled)
+    const float ch[4] = {ch1Output(), ch2Output(), ch3Output(), ch4Output()};
+
+    float left = 0.f;
+    float right = 0.f;
+
+    uint8_t nr51 = mRegs[kNR51 - kBaseAddr];
+    for (size_t i = 0; i < mChannels.size(); ++i)
+    {
+        if (getBit(nr51, static_cast<int>(SoundPanning::CH1Left) + i))
+        {
+            left += ch[i];
+        }
+        if (getBit(nr51, static_cast<int>(SoundPanning::CH1Right) + i))
+        {
+            right += ch[i];
+        }
+    }
+
+    // Average of 4 channels keeps the sum inside [-1, 1]
+    left /= static_cast<float>(mChannels.size());
+    right /= static_cast<float>(mChannels.size());
+
+    float leftVol = (((mRegs[kNR50 - kBaseAddr] >> 4) & 0b0000'0111) + 1) / 8.f;
+    float rightVol = ((mRegs[kNR50 - kBaseAddr] & 0b0000'0111) + 1) / 8.f;
+
+    left *= leftVol;
+    right *= rightVol;
+
+    if (!getBit(mRegs[kNR52 - kBaseAddr], AudioMasterControl::AudioOn))
+    {
+        left = right = 0.f;
+    }
+
+    mRing.push(left, right);
+}
+
+auto APU::getRingBuffer() -> AudioRing &
+{
+    return mRing;
 }
 } // namespace qgb

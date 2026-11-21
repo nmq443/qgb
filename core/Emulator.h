@@ -22,6 +22,7 @@ public:
     auto getPPU() -> PPU &;
     void setJoypadState(JoypadState state);
     auto hasRom() -> bool;
+    auto getAudioRingBuffer() -> AudioRing &;
 
 private:
     void pollSerial();

@@ -2,6 +2,7 @@
 
 #include "IClockable.h"
 #include <array>
+#include <atomic>
 #include <cstdint>
 
 namespace qgb
@@ -31,6 +32,34 @@ struct Channel
 {
     bool enabled = false;
     uint16_t length = 0; // CH3 need up to 256
+    int8_t sample = 0;
+};
+
+struct AudioRing
+{
+    static constexpr size_t kCapacity = 8192;
+    static constexpr size_t kMask = kCapacity - 1;
+    std::array<float, kCapacity * 2> data = {};
+    std::atomic<size_t> readPos = 0;
+    std::atomic<size_t> writePos = 0;
+
+    auto available() const -> size_t;
+
+    /**
+     * @brief Emulator thread. Returns false on overrun (frame dropped).
+     * @param l Left channel
+     * @param r Right channel
+     * @return Overrun or not
+     */
+    auto push(float l, float r) -> bool;
+
+    /**
+     * @brief Audio thread. Returns how many frames were actually copied.
+     * @param out Buffer to write
+     * @param frames Number of frames requested
+     * @return Number of frames were actually copied
+     */
+    auto pop(float *out, size_t frames) -> size_t;
 };
 
 class APU : public IClockable
@@ -62,6 +91,10 @@ public:
     static constexpr uint16_t kNR50 = 0xff24;
     static constexpr uint16_t kNR52 = 0xff26;
 
+    static constexpr uint16_t kBaseAddr = 0xff10;
+
+    static constexpr double kCyclesPerSample = 4194304.0 / 48000;
+
     static constexpr std::array<uint8_t, 0x17> kReadMask = {
         0x80, 0x3f, 0x00, 0xff, 0xbf, // NR10-14
         0xff, 0x3f, 0x00, 0xff, 0xbf, // 0xff15 (unused), NR21-24
@@ -77,10 +110,20 @@ public:
     void write(uint16_t address, uint8_t value);
     void powerOff();
     auto getChannel(uint8_t index) const -> const Channel &;
+    void pushSample();
+    auto getRingBuffer() -> AudioRing &;
+
+    // temp
+    float ch1Output();
+    float ch2Output();
+    float ch3Output();
+    float ch4Output();
 
 private:
     std::array<uint8_t, 23> mRegs{};
     std::array<uint8_t, 16> mWaveRam = {};
     std::array<Channel, 4> mChannels = {}; // CH1..4
+    double mSampleTimer = 0.0;
+    AudioRing mRing;
 };
 } // namespace qgb

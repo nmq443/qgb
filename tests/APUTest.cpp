@@ -264,7 +264,7 @@ TEST_F(APUTest, PowerOffDisablesChannels)
 {
     powerOn();
     powerOff();
-    for (size_t i = 0; i < 4; ++i)
+    for (uint8_t i = 0; i < 4; ++i)
     {
         EXPECT_FALSE(apu.getChannel(i).enabled);
     }

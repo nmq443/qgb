@@ -141,7 +141,7 @@ void Bus::write(uint16_t address, uint8_t value)
             {
                 uint16_t src = value << 8;
                 std::array<uint8_t, 160> oam = {};
-                std::ranges::transform(std::views::iota(0, 160), oam.begin(), [this, src](int i)
+                std::ranges::transform(std::views::iota(0, 160), oam.begin(), [this, src](uint16_t i)
                                        { return read(src + i); });
                 mPPUPtr->setOam(oam);
             }
