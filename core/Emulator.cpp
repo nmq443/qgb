@@ -5,10 +5,11 @@ namespace qgb
 {
 Emulator::Emulator()
 {
-    mBus.init(mCartridge, mTimer, mPPU);
+    mBus.init(mCartridge, mTimer, mPPU, mAPU);
     mCPU.init(mBus, mClock);
     mClock.addDevice(mTimer);
     mClock.addDevice(mPPU);
+    mClock.addDevice(mAPU);
 }
 
 void Emulator::load(const std::filesystem::path &romPath)
@@ -72,5 +73,10 @@ void Emulator::setJoypadState(JoypadState state)
 auto Emulator::hasRom() -> bool
 {
     return mCartridge.hasRom();
+}
+
+auto Emulator::getAudioRingBuffer() -> AudioRing &
+{
+    return mAPU.getRingBuffer();
 }
 } // namespace qgb

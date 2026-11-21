@@ -3,18 +3,30 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include <algorithm>
+#include <atomic>
 #include <iostream>
 #include <mutex>
 #include <optional>
 
+using namespace qgb;
+
 static std::optional<std::filesystem::path> gPendingRom;
 static std::mutex gRomMutex;
+
+void SDLCALL AudioCallback(void *userdata, SDL_AudioStream *s, int additionalAmount, int)
+{
+    auto *ring = static_cast<AudioRing *>(userdata);
+    int frames = additionalAmount / (sizeof(float) * 2);
+    std::vector<float> buf(frames * 2, 0.0f);
+    ring->pop(buf.data(), frames);
+    SDL_PutAudioStreamData(s, buf.data(), additionalAmount);
+}
 
 static const SDL_DialogFileFilter kRomFilters[] = {
     {"Game Boy ROMs", "gb;gbc"},
     {"All files", "*"}};
 
-static void onRomSelected(void *userdata, const char *const *filelist, int filter)
+static void onRomSelected(void *, const char *const *filelist, int)
 {
     if (!filelist)
     {
@@ -36,17 +48,16 @@ static void openDialog(SDL_Window *window)
     SDL_ShowOpenFileDialog(onRomSelected, nullptr, window, kRomFilters, SDL_arraysize(kRomFilters), nullptr, false);
 }
 
-int main(int argc, char **argv)
+int main(int, char **)
 {
-    using namespace qgb;
+    constexpr int kSampleRate = 48000;
     constexpr int kScale = 5;
 
     Emulator emu;
-    // emu.load(romPath);
     emu.setSerialCallback([](char c)
                           { std::cout << c << std::flush; });
 
-    if (!SDL_Init(SDL_INIT_VIDEO))
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
     {
         SDL_Log("SDL_Init failed: %s", SDL_GetError());
         return 1;
@@ -69,6 +80,13 @@ int main(int argc, char **argv)
         renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
         PPU::kLcdWidth, PPU::kLcdHeight);
     SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST); // crisp pixels
+
+    SDL_AudioSpec spec;
+    spec.format = SDL_AUDIO_F32;
+    spec.channels = 2;
+    spec.freq = kSampleRate;
+    SDL_AudioStream *stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, AudioCallback, &emu.getAudioRingBuffer());
+    SDL_ResumeAudioStreamDevice(stream);
 
     bool running = true;
     while (running)
