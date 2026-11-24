@@ -93,7 +93,13 @@ public:
 
     static constexpr uint16_t kBaseAddr = 0xff10;
 
-    static constexpr double kCyclesPerSample = 4194304.0 / 48000;
+    // The Game Boy CPU runs at 4,194,304 T-cycles per second.
+    // Audio output runs at 48,000 samples per second. (Standard for video, gaming, streaming, and multimedia projects.)
+    static constexpr double kCyclesPerSample = 4194304.0 / 48000; // ~87.8 cycles
+
+    // The frame sequencer ticks at 512 Hz.
+    // 4,194,304 / 512 = 8192 T-cycles between ticks.
+    static constexpr int kFrameSeqPeriod = 8192;
 
     static constexpr std::array<uint8_t, 0x17> kReadMask = {
         0x80, 0x3f, 0x00, 0xff, 0xbf, // NR10-14
@@ -112,6 +118,12 @@ public:
     auto getChannel(uint8_t index) const -> const Channel &;
     void pushSample();
     auto getRingBuffer() -> AudioRing &;
+    void stepFrameSequencer();
+
+private:
+    void clockLength();
+    void clockSweep();
+    void clockEnvelope();
 
     // temp
     float ch1Output();
@@ -124,6 +136,8 @@ private:
     std::array<uint8_t, 16> mWaveRam = {};
     std::array<Channel, 4> mChannels = {}; // CH1..4
     double mSampleTimer = 0.0;
+    int mFrameSeqCounter = 0;
+    uint8_t mFrameSeqStep = 0;
     AudioRing mRing;
 };
 } // namespace qgb

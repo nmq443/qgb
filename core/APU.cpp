@@ -47,8 +47,18 @@ auto AudioRing::pop(float *out, size_t frames) -> size_t
 
 void APU::tick(int tCycles)
 {
-    mRegs[kNR51 - kBaseAddr] = 0x01;
     mSampleTimer += tCycles;
+
+    if (getBit(mRegs[kNR52 - kBaseAddr], AudioMasterControl::AudioOn))
+    {
+        mFrameSeqCounter += tCycles;
+        while (mFrameSeqCounter >= kFrameSeqPeriod)
+        {
+            mFrameSeqCounter -= kFrameSeqPeriod;
+            stepFrameSequencer();
+        }
+    }
+
     while (mSampleTimer >= kCyclesPerSample)
     {
         mSampleTimer -= kCyclesPerSample;
@@ -99,9 +109,14 @@ void APU::write(uint16_t address, uint8_t value)
     }
 
     bool wasOn = getBit(mRegs[kNR52 - 0xff10], AudioMasterControl::AudioOn);
+    bool nowOn = getBit(value, AudioMasterControl::AudioOn);
+    if (!wasOn and nowOn) // power on reset the step and counter
+    {
+        mFrameSeqCounter = 0;
+        mFrameSeqStep = 0;
+    }
     if (kNR52 == address)
     {
-        bool nowOn = getBit(value, AudioMasterControl::AudioOn);
         if (wasOn and !nowOn)
         {
             powerOff();
@@ -214,4 +229,30 @@ auto APU::getRingBuffer() -> AudioRing &
 {
     return mRing;
 }
+
+void APU::stepFrameSequencer()
+{
+    switch (mFrameSeqStep)
+    {
+    case 0:
+    case 4:
+        clockLength();
+        break;
+    case 2:
+    case 6:
+        clockLength();
+        clockSweep();
+        break;
+    case 7:
+        clockEnvelope();
+        break;
+    }
+    mFrameSeqStep = (mFrameSeqStep + 1) & 7; // identical to (mFrameSeqStep + 1) % 8
+}
+
+void APU::clockLength() {}
+
+void APU::clockSweep() {}
+
+void APU::clockEnvelope() {}
 } // namespace qgb
