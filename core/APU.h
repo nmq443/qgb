@@ -30,9 +30,24 @@ enum class SoundPanning
 
 struct Channel
 {
+    static constexpr uint8_t kDutyTable[4][8] = {
+        {0, 0, 0, 0, 0, 0, 0, 1}, // 12.5%
+        {1, 0, 0, 0, 0, 0, 0, 1}, // 25%
+        {1, 0, 0, 0, 0, 1, 1, 1}, // 50%
+        {0, 1, 1, 1, 1, 1, 1, 0}, // 75%
+    };
+
     bool enabled = false;
     uint16_t length = 0; // CH3 need up to 256
     int8_t sample = 0;
+
+    uint8_t dutyType = 0; // from NR21 bits 7-6
+    uint8_t dutyPos = 0;  // 0..7, current step in the pattern
+
+    auto dutyBit() const -> uint8_t
+    {
+        return kDutyTable[dutyType][dutyPos];
+    }
 };
 
 struct AudioRing
