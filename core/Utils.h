@@ -37,6 +37,19 @@ auto getBit(uint8_t num, Enum flag) -> bool
 }
 
 /**
+ * @brief Get status of a bit of a value
+ * @param num Target number
+ * @param flag Target bit (pass integral type in)
+ * @return Status of the bit
+ */
+template <typename Integral>
+    requires std::is_integral_v<Integral>
+auto getBit(uint8_t num, Integral flag) -> bool
+{
+    return ((num >> flag) & 1) > 0;
+}
+
+/**
  * @brief Set status of a bit of a value
  * @param num Target number
  * @param flag Target bit (pass enum class in)

@@ -19,11 +19,12 @@ void InterruptController::clear(uint8_t bit)
     IF &= ~(1 << bit);
 }
 
-void Bus::init(Cartridge &cartridge, Timer &timer, PPU &ppu)
+void Bus::init(Cartridge &cartridge, Timer &timer, PPU &ppu, APU &apu)
 {
     mCartridgePtr = &cartridge;
     mTimerPtr = &timer;
     mPPUPtr = &ppu;
+    mAPUPtr = &apu;
 
     auto timerInterrupt = [this]()
     {
@@ -85,6 +86,10 @@ uint8_t Bus::read(uint16_t address) const
         {
             return mJp.getJp();
         }
+        else if (0xff10 <= address and address <= 0xff26)
+        {
+            return mAPUPtr->read(address);
+        }
         return mIoRegs[address - 0xff00];
     }
     else if (0xff80 <= address && address <= 0xfffe) // hram
@@ -136,7 +141,7 @@ void Bus::write(uint16_t address, uint8_t value)
             {
                 uint16_t src = value << 8;
                 std::array<uint8_t, 160> oam = {};
-                std::ranges::transform(std::views::iota(0, 160), oam.begin(), [this, src](int i)
+                std::ranges::transform(std::views::iota(0, 160), oam.begin(), [this, src](uint16_t i)
                                        { return read(src + i); });
                 mPPUPtr->setOam(oam);
             }
@@ -145,6 +150,10 @@ void Bus::write(uint16_t address, uint8_t value)
         else if (0xff00 == address) // p1/joyp
         {
             mJp.setJp(value);
+        }
+        else if (0xff10 <= address and address <= 0xff26)
+        {
+            mAPUPtr->write(address, value);
         }
         else
         {
